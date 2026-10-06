@@ -1,0 +1,13 @@
+[
+  {
+    "Execution Time": 5.0,
+    "Planning Time": 0.1,
+    "Plan": {
+      "Node Type": "Index Scan",
+      "Relation Name": "telemetry_pg",
+      "Actual Rows": 25,
+      "Shared Hit Blocks": 2,
+      "Shared Read Blocks": 0
+    }
+  }
+]
