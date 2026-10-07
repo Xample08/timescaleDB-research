@@ -1,7 +1,16 @@
 import React from "react";
-import { Card, StatCard, Badge, SERIES_COLORS } from "./ui";
+import { Icon } from "./Icon";
+import { Badge, SERIES_COLORS } from "./ui";
 import { formatMs, formatInt, formatDuration } from "@/lib/format";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
 import { SimConfig } from "./ControlPanel";
 
 export interface TickMetric {
@@ -42,78 +51,197 @@ interface Props {
 }
 
 export function MetricsPanel({ metrics, config }: Props) {
-  const { status, message, elapsedSec, totalTicks, lateTicks, errorCount, insertedPg, insertedTs, ratePg, rateTs, p50Pg, p95Pg, p50Ts, p95Ts, chartData, lateRows, dupRows, skippedRows } = metrics;
-  
+  const {
+    status,
+    message,
+    elapsedSec,
+    totalTicks,
+    lateTicks,
+    errorCount,
+    insertedPg,
+    insertedTs,
+    ratePg,
+    rateTs,
+    p50Pg,
+    p95Pg,
+    p50Ts,
+    p95Ts,
+    chartData,
+    lateRows,
+    dupRows,
+    skippedRows,
+  } = metrics;
+
   let tone: "neutral" | "ok" | "warn" | "error" = "neutral";
   if (status === "running") tone = "ok";
   if (status === "failed") tone = "error";
   if (status === "starting" || status === "stopping") tone = "warn";
 
   return (
-    <div className="flex flex-col h-full min-h-0 min-w-0 gap-4">
-      {status === "running" && (
-        <div className="rounded-md bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-          Simulation runs only while this tab stays open and visible.
+    <div className="metrics-layout">
+      <div className="run-summary panel">
+        <div>
+          <Badge tone={tone}>
+            <span className="status-dot" /> {status.toUpperCase()}
+          </Badge>
+          <span className="summary-message" role="status">
+            {message || "Ready when you are"}
+          </span>
         </div>
-      )}
-      
-      {message && status === "failed" && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300">
-          {message}
+        <div className="summary-numbers">
+          <span>
+            <Icon name="clock" /> <b>{formatDuration(elapsedSec)}</b> elapsed
+          </span>
+          <span>
+            <Icon name="refresh" /> <b>{formatInt(totalTicks)}</b> ticks
+          </span>
+          <span>
+            <Icon name="warning" /> <b>{lateTicks}</b> late /{" "}
+            <b>{errorCount}</b> errors
+          </span>
         </div>
-      )}
-      {message && status !== "failed" && (
-        <div className="rounded-md bg-slate-100 p-3 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-300">
-          {message}
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6 min-w-0">
-        <StatCard label="Status" value={<Badge tone={tone}>{status.toUpperCase()}</Badge>} />
-        <StatCard label="Elapsed" value={formatDuration(elapsedSec)} />
-        <StatCard label="Ticks" value={formatInt(totalTicks)} hint={`${lateTicks} late, ${errorCount} err`} />
-        
-        {config.targets.includes("pg") && (
-          <StatCard label="Inserted PG" value={formatInt(insertedPg)} hint={`${formatInt(ratePg)} /s`} />
-        )}
-        {config.targets.includes("ts") && (
-          <StatCard label="Inserted TS" value={formatInt(insertedTs)} hint={`${formatInt(rateTs)} /s`} />
-        )}
-        {config.targets.includes("pg") && (
-          <StatCard label="Latency PG" value={formatMs(p50Pg)} hint={`p95: ${formatMs(p95Pg)}`} />
-        )}
-        {config.targets.includes("ts") && (
-          <StatCard label="Latency TS" value={formatMs(p50Ts)} hint={`p95: ${formatMs(p95Ts)}`} />
-        )}
-        {config.dirty && (
-          <StatCard label="Dirty Data" value={formatInt(lateRows + dupRows)} hint={`${formatInt(skippedRows)} skipped`} />
-        )}
       </div>
-
-      <Card title="Latency per tick (last 300)" className="flex-1">
-        <div className="h-80 w-full min-w-0">
+      <div className="database-grid">
+        {(["pg", "ts"] as const).map((t) => {
+          const pg = t === "pg";
+          return (
+            <section
+              key={t}
+              className={`database-report panel ${t} ${!config.targets.includes(t) ? "inactive" : ""}`}
+            >
+              <div className="database-heading">
+                <span className="database-symbol">
+                  <Icon name={pg ? "database" : "bolt"} />
+                </span>
+                <div>
+                  <h2>{pg ? "PostgreSQL" : "TimescaleDB"}</h2>
+                  <p>
+                    {pg
+                      ? "Standard relational table"
+                      : "Time-partitioned hypertable"}
+                  </p>
+                </div>
+                <span className="database-tag">
+                  {config.targets.includes(t) ? "SELECTED" : "INACTIVE"}
+                </span>
+              </div>
+              <div className="report-values">
+                <div>
+                  <span>
+                    <Icon name="download" /> Rows inserted
+                  </span>
+                  <strong>{formatInt(pg ? insertedPg : insertedTs)}</strong>
+                  <small>{formatInt(pg ? ratePg : rateTs)} rows / second</small>
+                </div>
+                <div>
+                  <span>
+                    <Icon name="bolt" /> Median latency
+                  </span>
+                  <strong>{formatMs(pg ? p50Pg : p50Ts)}</strong>
+                  <small>p95: {formatMs(pg ? p95Pg : p95Ts)}</small>
+                </div>
+              </div>
+            </section>
+          );
+        })}
+      </div>
+      <section className="chart-panel panel">
+        <div className="chart-heading">
+          <div>
+            <h2>Insert latency</h2>
+            <p>Compare response times across the last 300 ticks</p>
+          </div>
+          <div className="chart-key">
+            <span className="pg">
+              <span className="status-dot" /> PostgreSQL
+            </span>
+            <span className="ts">
+              <span className="status-dot" /> TimescaleDB
+            </span>
+          </div>
+        </div>
+        <div className="latency-chart">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" vertical={false} />
-              <XAxis dataKey="tickNo" fontSize={11} stroke="#64748b" />
-              <YAxis fontSize={11} stroke="#64748b" tickFormatter={(v) => `${v} ms`} width={60} />
-              <Tooltip 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={(val: any) => [typeof val === 'number' ? `${val.toFixed(2)} ms` : val, undefined]}
-                labelFormatter={(lbl) => `Tick ${lbl}`}
-                contentStyle={{ fontSize: '12px' }}
+            <LineChart
+              data={chartData}
+              margin={{ top: 12, right: 16, bottom: 0, left: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 5"
+                stroke="#29364b"
+                vertical={false}
               />
-              <Legend verticalAlign="top" height={36} />
+              <XAxis
+                dataKey="tickNo"
+                fontSize={11}
+                stroke="#94a3b8"
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                fontSize={11}
+                stroke="#94a3b8"
+                tickFormatter={(v) => `${v} ms`}
+                width={58}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                labelFormatter={(lbl) => `Tick ${lbl}`}
+                contentStyle={{
+                  background: "#162236",
+                  border: "1px solid #334155",
+                  borderRadius: 8,
+                  color: "#e2e8f0",
+                }}
+                labelStyle={{ color: "#cbd5e1" }}
+              />
               {config.targets.includes("pg") && (
-                <Line type="linear" dataKey="pg" name="PostgreSQL" stroke={SERIES_COLORS.pg} strokeWidth={2} dot={false} isAnimationActive={false} />
-              )}
+                <Line
+                  dataKey="pg"
+                  name="PostgreSQL"
+                  stroke={SERIES_COLORS.pg}
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              )}{" "}
               {config.targets.includes("ts") && (
-                <Line type="linear" dataKey="ts" name="TimescaleDB" stroke={SERIES_COLORS.ts} strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Line
+                  dataKey="ts"
+                  name="TimescaleDB"
+                  stroke={SERIES_COLORS.ts}
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={false}
+                />
               )}
             </LineChart>
           </ResponsiveContainer>
+          {!chartData.length && (
+            <div className="chart-empty">
+              <span>
+                <Icon name="chart" />
+              </span>
+              <b>Your comparison starts here</b>
+              <p>Run the simulation to see live insert latency.</p>
+            </div>
+          )}
         </div>
-      </Card>
+      </section>
+      <div className="quality-strip">
+        <span>
+          <Icon name="check" /> Data quality
+        </span>
+        <span>{formatInt(lateRows)} late records</span>
+        <span>{formatInt(dupRows)} duplicates</span>
+        <span>{formatInt(skippedRows)} skipped</span>
+        <span>
+          {status === "running"
+            ? "Keep this tab open while running"
+            : "Identical telemetry sent to each selected database"}
+        </span>
+      </div>
     </div>
   );
 }

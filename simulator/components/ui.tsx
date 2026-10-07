@@ -48,8 +48,8 @@ import React from "react";
  */
 
 export const SERIES_COLORS = {
-  pg: "#2563eb",
-  ts: "#f59e0b",
+  pg: "#60a5fa",
+  ts: "#2dd4bf",
   ts_cagg: "#10b981",
 };
 
