@@ -1,0 +1,8 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "react-hooks/purity": "off",
+    "react-compiler/react-compiler": "off",
+    "@typescript-eslint/no-explicit-any": "off"
+  }
+}
