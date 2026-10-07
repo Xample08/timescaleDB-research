@@ -1,19 +1,109 @@
-import React from "react";
+import React, { useState } from "react";
+import { ResizablePanels } from "./ResizablePanels";
 import { Icon } from "./Icon";
-export interface QueryEvent {
+import { QueryRecord, renderSql } from "../lib/query-history";
+const PAGE_SIZE = 20;
+function DatabaseHistory({
+  target,
+  enabled,
+  queries,
+  highlighted,
+}: {
   target: string;
-  sql: string;
-  rows: number;
-  phase: "executing" | "complete" | "failed";
-  error?: string;
+  enabled: boolean;
+  queries: QueryRecord[];
+  highlighted?: string;
+}) {
+  const [offset, setOffset] = useState(0);
+  const page = queries.slice(
+    Math.min(offset, Math.max(0, queries.length - 1)),
+    offset + PAGE_SIZE,
+  );
+  return (
+    <div className={`sql-history-column ${target}`}>
+      <div className="sql-query-title">
+        <b>
+          <Icon name={target === "pg" ? "database" : "bolt"} />
+          {target === "pg" ? "PostgreSQL" : "TimescaleDB"}
+        </b>
+        <span>{enabled ? `${queries.length} queries` : "Disabled"}</span>
+      </div>
+      <div className="history-pagination">
+        <button disabled={!offset} onClick={() => setOffset(0)}>
+          Latest
+        </button>
+        <button
+          disabled={!offset}
+          onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+        >
+          Newer
+        </button>
+        <button
+          disabled={offset + PAGE_SIZE >= queries.length}
+          onClick={() => setOffset(offset + PAGE_SIZE)}
+        >
+          Older
+        </button>
+      </div>
+      <div className="sql-history-list">
+        {page.map((q) => (
+          <article
+            key={q.id}
+            className={`sql-query ${target} ${q.phase} ${q.id === highlighted ? "highlighted" : ""}`}
+          >
+            <div className="query-meta">
+              <b>
+                {q.id === highlighted
+                  ? q.phase === "executing"
+                    ? "Executing now"
+                    : "Latest query"
+                  : `Tick ${q.tickNo + 1}`}
+              </b>
+              <time>
+                {new Date(q.timestamp).toLocaleTimeString("en-GB", {
+                  timeZone: "Asia/Jakarta",
+                  hour12: false,
+                })}{" "}
+                WIB
+              </time>
+            </div>
+            <div className="query-result">
+              {q.phase === "failed"
+                ? "Failed"
+                : q.phase === "executing"
+                  ? `Inserting ${q.rows} rows`
+                  : `${q.inserted ?? 0} inserted / ${q.rows} submitted`}
+            </div>
+            <pre tabIndex={0}>
+              <code>{renderSql(q.sql, q.params)}</code>
+            </pre>
+            {q.error && <p role="alert">{q.error}</p>}
+          </article>
+        ))}
+        {!queries.length && (
+          <div
+            className={`sql-query ${target} ${enabled ? "waiting" : "disabled"}`}
+          >
+            <p>
+              {enabled
+                ? "Executed INSERT queries and their actual values will appear here."
+                : "Enable this destination in simulation controls."}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 export function SqlWindow({
   queries,
   targets,
 }: {
-  queries: Record<string, QueryEvent>;
+  queries: QueryRecord[];
   targets: string[];
 }) {
+  const latest =
+    queries.findLast((q) => q.phase === "executing") || queries.at(-1);
   return (
     <section
       id="sql-activity"
@@ -23,50 +113,31 @@ export function SqlWindow({
     >
       <div className="sql-heading">
         <span>
-          <Icon name="sql" /> Live SQL{" "}
-          <small>Actual parameterized INSERT statements</small>
+          <Icon name="sql" /> SQL activity
+          <small>All INSERT queries this session</small>
         </span>
+        <span className="query-total">{queries.length} queries</span>
       </div>
-      <div className="sql-targets">
-        {(["pg", "ts"] as const).map((t) => {
-          const enabled = targets.includes(t);
-          const q = enabled ? queries[t] : undefined;
-          return (
-            <div
-              key={t}
-              className={`sql-query ${t} ${enabled ? q?.phase || "waiting" : "disabled"}`}
-            >
-              <div className="sql-query-title">
-                <b>{t === "pg" ? "PostgreSQL" : "TimescaleDB"}</b>
-                <span role="status">
-                  {!enabled
-                    ? "Disabled"
-                    : q
-                      ? `${q.phase === "executing" ? "Executing" : q.phase === "failed" ? "! Failed" : "Complete"} / ${q.rows} rows`
-                      : "Waiting for next INSERT"}
-                </span>
-              </div>
-              {q ? (
-                <pre tabIndex={0}>
-                  <code>
-                    {q.sql
-                      .replace(" (time", "\n(time")
-                      .replace(" VALUES ", "\nVALUES\n")
-                      .replace(" ON CONFLICT", "\nON CONFLICT")}
-                  </code>
-                </pre>
-              ) : (
-                <p>
-                  {enabled
-                    ? "Queries appear here when the server starts writing."
-                    : "Destination disabled. Enable it in simulation controls."}
-                </p>
-              )}
-              {q?.error && <p role="alert">{q.error}</p>}
-            </div>
-          );
-        })}
-      </div>
+      <p className="sql-description">
+        Actual submitted values. The highlighted query is executing or was the
+        latest to run.
+      </p>
+      <ResizablePanels
+        className="sql-targets"
+        direction="vertical"
+        label="SQL history"
+        initialSizes={[50, 50]}
+      >
+        {(["pg", "ts"] as const).map((t) => (
+          <DatabaseHistory
+            key={t}
+            target={t}
+            enabled={targets.includes(t)}
+            queries={queries.filter((q) => q.target === t).reverse()}
+            highlighted={latest?.id}
+          />
+        ))}
+      </ResizablePanels>
     </section>
   );
 }

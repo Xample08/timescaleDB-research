@@ -1,8 +1,10 @@
 "use client";
 
+import { ResizablePanels } from "@/components/ResizablePanels";
 import { Icon } from "@/components/Icon";
 import React, { useState, useEffect, useRef } from "react";
-import { SqlWindow, QueryEvent } from "@/components/SqlWindow";
+import { SqlWindow } from "@/components/SqlWindow";
+import { QueryRecord, updateQueryHistory } from "@/lib/query-history";
 import {
   ControlPanel,
   SimConfig,
@@ -30,7 +32,8 @@ export default function SimulatorPage() {
   useEffect(() => {
     configRef.current = config;
   }, [config]);
-  const [queries, setQueries] = useState<Record<string, QueryEvent>>({});
+  const [queries, setQueries] = useState<QueryRecord[]>([]);
+  const [layoutVersion, setLayoutVersion] = useState(0);
   const [password, setPassword] = useState("");
 
   const [metrics, setMetrics] = useState<MetricsState>({
@@ -251,17 +254,8 @@ export default function SimulatorPage() {
         for (const line of lines) {
           if (!line.trim()) continue;
           const event = JSON.parse(line);
-          if (event.type === "query")
-            setQueries((q) => ({ ...q, [event.target]: event }));
-          if (event.type === "query-error")
-            setQueries((q) => ({
-              ...q,
-              [event.target]: {
-                ...q[event.target],
-                phase: "failed",
-                error: event.error,
-              },
-            }));
+          if (event.type === "query" || event.type === "query-error")
+            setQueries((history) => updateQueryHistory(history, event));
           if (event.type === "result") result = event;
         }
         if (done) break;
@@ -355,7 +349,6 @@ export default function SimulatorPage() {
       });
       return;
     }
-    setQueries({});
     updateMetrics({
       status: "starting",
       message: "Initializing...",
@@ -458,12 +451,25 @@ export default function SimulatorPage() {
             <small>Compare every write.</small>
           </h1>
         </div>
-        <span className="environment-badge">
-          <span className="status-dot" />
-          Vehicle telemetry
-        </span>
+        <div className="layout-actions">
+          <button
+            onClick={() => setLayoutVersion((v) => v + 1)}
+            className="reset-layout"
+          >
+            Reset sizes
+          </button>
+          <span className="environment-badge">
+            <span className="status-dot" />
+            Vehicle telemetry
+          </span>
+        </div>
       </div>
-      <div className="workspace-grid">
+      <ResizablePanels
+        key={layoutVersion}
+        className="workspace-grid"
+        label="Workspace"
+        initialSizes={[23, 40, 37]}
+      >
         <ControlPanel
           config={config}
           onChange={setConfig}
@@ -477,9 +483,9 @@ export default function SimulatorPage() {
         />
         <div className="results-workspace">
           <MetricsPanel metrics={metrics} config={config} />
-          <SqlWindow queries={queries} targets={config.targets} />
         </div>
-      </div>
+        <SqlWindow queries={queries} targets={config.targets} />
+      </ResizablePanels>
     </main>
   );
 }

@@ -264,6 +264,7 @@ async function runTick(
       errors[t] = null;
 
       const tableName = tableMap[t];
+      let queryId = "";
       try {
         if (mode === "batch") {
           const chunks = chunkArray(rowsToInsert, 500);
@@ -281,23 +282,29 @@ async function runTick(
             sql +=
               paramStrings.join(", ") +
               " ON CONFLICT (vehicle_id, time) DO NOTHING";
-            const s1 = performance.now();
+            queryId = crypto.randomUUID();
             emit({
               type: "query",
+              id: queryId,
+              timestamp: new Date().toISOString(),
               target: t,
               sql,
               rows: chunk.length,
+              params: values,
+              tickNo,
               phase: "executing",
             });
+            const s1 = performance.now();
             const res = await client.query(sql, values);
+            const e1 = performance.now();
             emit({
               type: "query",
+              id: queryId,
+              timestamp: new Date().toISOString(),
               target: t,
-              sql,
-              rows: chunk.length,
+              inserted: res.rowCount || 0,
               phase: "complete",
             });
-            const e1 = performance.now();
             latencyMs[t] += e1 - s1;
             inserted[t] += res.rowCount || 0;
           }
@@ -305,24 +312,35 @@ async function runTick(
           // per_row
           for (const r of rowsToInsert) {
             const sql = `INSERT INTO ${tableName} (time, vehicle_id, latitude, longitude, speed_kmh, heading_deg, altitude_m, gps_accuracy_m) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (vehicle_id, time) DO NOTHING`;
-            const s1 = performance.now();
+            queryId = crypto.randomUUID();
             emit({
               type: "query",
+              id: queryId,
+              timestamp: new Date().toISOString(),
               target: t,
               sql,
               rows: 1,
+              params: r,
+              tickNo,
               phase: "executing",
             });
+            const s1 = performance.now();
             const res = await client.query(sql, r);
-            emit({ type: "query", target: t, sql, rows: 1, phase: "complete" });
             const e1 = performance.now();
+            emit({
+              type: "query",
+              id: queryId,
+              target: t,
+              inserted: res.rowCount || 0,
+              phase: "complete",
+            });
             latencyMs[t] += e1 - s1;
             inserted[t] += res.rowCount || 0;
           }
         }
       } catch (err: unknown) {
         errors[t] = String((err as Error).message).substring(0, 200);
-        emit({ type: "query-error", target: t, error: errors[t] });
+        emit({ type: "query-error", id: queryId, target: t, error: errors[t] });
       }
     }
   } catch (error: unknown) {

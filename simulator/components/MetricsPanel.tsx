@@ -1,4 +1,5 @@
 import React from "react";
+import { ResizablePanels } from "./ResizablePanels";
 import { Icon } from "./Icon";
 import { Badge, SERIES_COLORS } from "./ui";
 import { formatMs, formatInt, formatDuration } from "@/lib/format";
@@ -101,134 +102,147 @@ export function MetricsPanel({ metrics, config }: Props) {
           </span>
         </div>
       </div>
-      <div className="database-grid">
-        {(["pg", "ts"] as const).map((t) => {
-          const pg = t === "pg";
-          return (
-            <section
-              key={t}
-              className={`database-report panel ${t} ${!config.targets.includes(t) ? "inactive" : ""}`}
-            >
-              <div className="database-heading">
-                <span className="database-symbol">
-                  <Icon name={pg ? "database" : "bolt"} />
-                </span>
-                <div>
-                  <h2>{pg ? "PostgreSQL" : "TimescaleDB"}</h2>
-                  <p>
-                    {pg
-                      ? "Standard relational table"
-                      : "Time-partitioned hypertable"}
-                  </p>
-                </div>
-                <span className="database-tag">
-                  {config.targets.includes(t) ? "SELECTED" : "INACTIVE"}
-                </span>
-              </div>
-              <div className="report-values">
-                <div>
-                  <span>
-                    <Icon name="download" /> Rows inserted
+      <ResizablePanels
+        direction="vertical"
+        label="Reports and latency chart"
+        className="metrics-split"
+        initialSizes={[45, 55]}
+      >
+        <ResizablePanels
+          className="database-grid"
+          label="Database reports"
+          initialSizes={[50, 50]}
+        >
+          {(["pg", "ts"] as const).map((t) => {
+            const pg = t === "pg";
+            return (
+              <section
+                key={t}
+                className={`database-report panel ${t} ${!config.targets.includes(t) ? "inactive" : ""}`}
+              >
+                <div className="database-heading">
+                  <span className="database-symbol">
+                    <Icon name={pg ? "database" : "bolt"} />
                   </span>
-                  <strong>{formatInt(pg ? insertedPg : insertedTs)}</strong>
-                  <small>{formatInt(pg ? ratePg : rateTs)} rows / second</small>
-                </div>
-                <div>
-                  <span>
-                    <Icon name="bolt" /> Median latency
+                  <div>
+                    <h2>{pg ? "PostgreSQL" : "TimescaleDB"}</h2>
+                    <p>
+                      {pg
+                        ? "Standard relational table"
+                        : "Time-partitioned hypertable"}
+                    </p>
+                  </div>
+                  <span className="database-tag">
+                    {config.targets.includes(t) ? "SELECTED" : "INACTIVE"}
                   </span>
-                  <strong>{formatMs(pg ? p50Pg : p50Ts)}</strong>
-                  <small>p95: {formatMs(pg ? p95Pg : p95Ts)}</small>
                 </div>
-              </div>
-            </section>
-          );
-        })}
-      </div>
-      <section className="chart-panel panel">
-        <div className="chart-heading">
-          <div>
-            <h2>Insert latency</h2>
-            <p>Compare response times across the last 300 ticks</p>
-          </div>
-          <div className="chart-key">
-            <span className="pg">
-              <span className="status-dot" /> PostgreSQL
-            </span>
-            <span className="ts">
-              <span className="status-dot" /> TimescaleDB
-            </span>
-          </div>
-        </div>
-        <div className="latency-chart">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={chartData}
-              margin={{ top: 12, right: 16, bottom: 0, left: 0 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 5"
-                stroke="#29364b"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="tickNo"
-                fontSize={11}
-                stroke="#94a3b8"
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                fontSize={11}
-                stroke="#94a3b8"
-                tickFormatter={(v) => `${v} ms`}
-                width={58}
-                tickLine={false}
-                axisLine={false}
-              />
-              <Tooltip
-                labelFormatter={(lbl) => `Tick ${lbl}`}
-                contentStyle={{
-                  background: "#162236",
-                  border: "1px solid #334155",
-                  borderRadius: 8,
-                  color: "#e2e8f0",
-                }}
-                labelStyle={{ color: "#cbd5e1" }}
-              />
-              {config.targets.includes("pg") && (
-                <Line
-                  dataKey="pg"
-                  name="PostgreSQL"
-                  stroke={SERIES_COLORS.pg}
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              )}{" "}
-              {config.targets.includes("ts") && (
-                <Line
-                  dataKey="ts"
-                  name="TimescaleDB"
-                  stroke={SERIES_COLORS.ts}
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              )}
-            </LineChart>
-          </ResponsiveContainer>
-          {!chartData.length && (
-            <div className="chart-empty">
-              <span>
-                <Icon name="chart" />
-              </span>
-              <b>Your comparison starts here</b>
-              <p>Run the simulation to see live insert latency.</p>
+                <div className="report-values">
+                  <div>
+                    <span>
+                      <Icon name="download" /> Rows inserted
+                    </span>
+                    <strong>{formatInt(pg ? insertedPg : insertedTs)}</strong>
+                    <small>
+                      {formatInt(pg ? ratePg : rateTs)} rows / second
+                    </small>
+                  </div>
+                  <div>
+                    <span>
+                      <Icon name="bolt" /> Median latency
+                    </span>
+                    <strong>{formatMs(pg ? p50Pg : p50Ts)}</strong>
+                    <small>p95: {formatMs(pg ? p95Pg : p95Ts)}</small>
+                  </div>
+                </div>
+              </section>
+            );
+          })}
+        </ResizablePanels>
+        <section className="chart-panel panel">
+          <div className="chart-heading">
+            <div>
+              <h2>Insert latency</h2>
+              <p>Compare response times across the last 300 ticks</p>
             </div>
-          )}
-        </div>
-      </section>
+            <div className="chart-key">
+              <span className="pg">
+                <span className="status-dot" /> PostgreSQL
+              </span>
+              <span className="ts">
+                <span className="status-dot" /> TimescaleDB
+              </span>
+            </div>
+          </div>
+          <div className="latency-chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={chartData}
+                margin={{ top: 12, right: 16, bottom: 0, left: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 5"
+                  stroke="#29364b"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="tickNo"
+                  fontSize={11}
+                  stroke="#94a3b8"
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  fontSize={11}
+                  stroke="#94a3b8"
+                  tickFormatter={(v) => `${v} ms`}
+                  width={58}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip
+                  labelFormatter={(lbl) => `Tick ${lbl}`}
+                  contentStyle={{
+                    background: "#162236",
+                    border: "1px solid #334155",
+                    borderRadius: 8,
+                    color: "#e2e8f0",
+                  }}
+                  labelStyle={{ color: "#cbd5e1" }}
+                />
+                {config.targets.includes("pg") && (
+                  <Line
+                    dataKey="pg"
+                    name="PostgreSQL"
+                    stroke={SERIES_COLORS.pg}
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                )}{" "}
+                {config.targets.includes("ts") && (
+                  <Line
+                    dataKey="ts"
+                    name="TimescaleDB"
+                    stroke={SERIES_COLORS.ts}
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+            {!chartData.length && (
+              <div className="chart-empty">
+                <span>
+                  <Icon name="chart" />
+                </span>
+                <b>Your comparison starts here</b>
+                <p>Run the simulation to see live insert latency.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </ResizablePanels>
       <div className="quality-strip">
         <span>
           <Icon name="check" /> Data quality

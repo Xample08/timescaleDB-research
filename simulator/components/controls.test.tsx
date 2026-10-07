@@ -43,7 +43,7 @@ test.each([["ts"], ["pg"], ["ts", "pg"], []])(
   "keeps database slots fixed for selected targets %j",
   (...targets: string[]) => {
     const html = renderToStaticMarkup(
-      <SqlWindow targets={targets} queries={{}} />,
+      <SqlWindow targets={targets} queries={[]} />,
     );
     expect(html.indexOf("PostgreSQL")).toBeLessThan(
       html.indexOf("TimescaleDB"),
@@ -52,18 +52,28 @@ test.each([["ts"], ["pg"], ["ts", "pg"], []])(
     expect(html).toContain("sql-query ts");
   },
 );
-test("disabled databases do not show old executing queries", () => {
+test("disabled destinations retain their prior query history", () => {
   const html = renderToStaticMarkup(
     <SqlWindow
       targets={["ts"]}
-      queries={{
-        pg: { target: "pg", sql: "OLD INSERT", rows: 1, phase: "executing" },
-      }}
+      queries={[
+        {
+          id: "old",
+          target: "pg",
+          sql: "INSERT VALUES ($1)",
+          params: [42],
+          rows: 1,
+          tickNo: 0,
+          timestamp: "2026-10-07T00:00:00Z",
+          phase: "complete",
+          inserted: 1,
+        },
+      ]}
     />,
   );
   expect(html).toContain("Disabled");
-  expect(html).not.toContain("OLD INSERT");
-  expect(html).not.toContain("Executing");
+  expect(html).toContain("INSERT\nVALUES\n(42)");
+  expect(html).toContain("Latest query");
 });
 test("form inputs have placeholders and associated internal labels", () => {
   const html = renderControls("batch");

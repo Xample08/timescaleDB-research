@@ -50,6 +50,10 @@ test("streams exact SQL in actual execution order and returns tick metrics", asy
   ]);
   expect(events[0].sql).toBe(query.mock.calls[0][0]);
   expect(events[2].sql).toBe(query.mock.calls[1][0]);
+  expect(events[0].params).toEqual(query.mock.calls[0][1]);
+  expect(events[2].params).toEqual(query.mock.calls[1][1]);
+  expect(events[1].id).toBe(events[0].id);
+  expect(events[3].id).toBe(events[2].id);
   expect(events.at(-1)).toMatchObject({
     type: "result",
     status: 200,
@@ -63,11 +67,13 @@ test("streams query failure and continues with the other destination", async () 
     .trim()
     .split("\n")
     .map((line) => JSON.parse(line));
-  expect(events).toContainEqual({
-    type: "query-error",
-    target: "ts",
-    error: "Insert failed",
-  });
+  expect(events).toContainEqual(
+    expect.objectContaining({
+      type: "query-error",
+      target: "ts",
+      error: "Insert failed",
+    }),
+  );
   expect(events.at(-1)).toMatchObject({
     data: { errors: { ts: "Insert failed", pg: null }, inserted: { pg: 1 } },
   });
