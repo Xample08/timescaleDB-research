@@ -321,7 +321,7 @@ export default function SimulatorPage() {
             onStop={handleStop}
           />
         </div>
-        <div>
+        <div className="min-w-0">
           <MetricsPanel metrics={metrics} config={config} />
         </div>
       </div>

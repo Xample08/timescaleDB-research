@@ -29,7 +29,7 @@ export function getPool(): Pool {
   pool = new Pool(config);
 
   pool.on('connect', (client) => {
-    client.query("SET TIME ZONE 'UTC'").catch(console.error);
+    client.query("SET TIME ZONE 'UTC'").catch(() => {});
   });
 
   return pool;

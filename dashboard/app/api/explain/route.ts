@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withReadOnlyClient, formatError } from '@/lib/db';
-import { getQueryDef, parsePlanTextChunks, computeB7Window, Variant } from '@/lib/bench';
+import { getQueryDef, parsePlanTextChunks, computeB7Window } from '@/lib/bench';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

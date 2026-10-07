@@ -40,7 +40,7 @@ export async function GET() {
             compressionRatio = before / after;
           }
         }
-      } catch (e) {
+      } catch {
         // ignore if not available
       }
 

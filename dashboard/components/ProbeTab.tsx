@@ -29,7 +29,7 @@ export function ProbeTab() {
         if (mounted && res.ok) {
           setIngestRate(st.ingest.pgRowsPerSecond);
         }
-      } catch (e) {}
+      } catch {}
     };
     if (running) {
       fetchStatus();

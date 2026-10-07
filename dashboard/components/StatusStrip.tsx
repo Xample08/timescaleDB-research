@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { StatCard } from './ui';
+import { StatCard, Spinner } from './ui';
 import { formatInt, formatDuration } from '@/lib/format';
 
 export function StatusStrip() {
@@ -47,7 +47,11 @@ export function StatusStrip() {
   }, []);
 
   if (!data && !error) {
-    return <div className="h-24 flex items-center justify-center border-b border-slate-200 dark:border-slate-800">Loading status...</div>;
+    return (
+      <div className="h-24 flex items-center justify-center border-b border-slate-200 dark:border-slate-800">
+        <Spinner />
+      </div>
+    );
   }
 
   const chunksCompressed = data?.chunks?.compressed || 0;

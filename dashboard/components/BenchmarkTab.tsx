@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Card, Field, Button, Badge, SERIES_COLORS, ErrorState, Spinner } from './ui';
+import { Card, Field, Button, Badge, SERIES_COLORS, ErrorState, Spinner, EmptyState } from './ui';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { formatMs, formatInt } from '@/lib/format';
 import { CATALOG, percentile } from '@/lib/bench';
@@ -69,7 +69,7 @@ export function BenchmarkTab() {
           if (parsed.length > 1) setCompareB(parsed[1].id);
         }
       }
-    } catch (e) {}
+    } catch {}
   }, []);
 
   const saveHistory = (run: RunHistory) => {
@@ -82,7 +82,7 @@ export function BenchmarkTab() {
       setCurrentRun(run);
       if (!compareA) setCompareA(run.id);
       else if (!compareB && parsed.length > 1) setCompareB(parsed[1].id);
-    } catch (e) {}
+    } catch {}
   };
 
   const handleSetChange = (val: 'quick'|'full') => {
@@ -357,14 +357,12 @@ export function BenchmarkTab() {
               </ResponsiveContainer>
             </Card>
 
-            <Card className="min-w-0">
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-sm font-semibold">Results Table</h2>
-                <div className="space-x-2">
-                  <Button onClick={exportCSV} variant="secondary">Export CSV</Button>
-                  <Button onClick={exportJSON} variant="secondary">Export JSON</Button>
-                </div>
+            <Card className="min-w-0" title="Results Table" right={
+              <div className="space-x-2">
+                <Button onClick={exportCSV} variant="secondary">Export CSV</Button>
+                <Button onClick={exportJSON} variant="secondary">Export JSON</Button>
               </div>
+            }>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
@@ -418,14 +416,11 @@ export function BenchmarkTab() {
             </Card>
           </>
         ) : (
-          <div className="flex h-48 items-center justify-center rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <span className="text-sm text-slate-500">Run a benchmark to see results</span>
-          </div>
+          <EmptyState title="No benchmark results" hint="Run a benchmark to see results" />
         )}
 
         {explainQuery && (
-          <Card title={`EXPLAIN for ${explainQuery}`}>
-            <div className="flex justify-end mb-2"><Button onClick={() => setExplainQuery(null)}>Close</Button></div>
+          <Card title={`EXPLAIN for ${explainQuery}`} right={<Button onClick={() => setExplainQuery(null)}>Close</Button>}>
             {!explainData ? <Spinner /> : explainData.error ? <ErrorState message={explainData.error} /> : (
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <div className="border border-slate-200 rounded-md p-3 bg-slate-50 dark:bg-slate-950 dark:border-slate-800">
