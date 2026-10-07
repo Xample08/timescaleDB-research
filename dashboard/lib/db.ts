@@ -49,3 +49,17 @@ export async function withReadOnlyClient<T>(
     client.release();
   }
 }
+
+export async function withClient<T>(
+  callback: (client: PoolClient) => Promise<T>,
+  options?: { timeoutMs?: number }
+): Promise<T> {
+  const client = await pool.connect();
+  try {
+    const timeout = options?.timeoutMs || 300000;
+    await client.query(`SET statement_timeout = ${timeout}`);
+    return await callback(client);
+  } finally {
+    client.release();
+  }
+}

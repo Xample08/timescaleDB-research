@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { withReadOnlyClient } from '@/lib/db';
+import { withReadOnlyClient, withClient } from '@/lib/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function GET() {
   try {
@@ -44,9 +44,10 @@ export async function GET() {
         // ignore if not available
       }
 
-      // Chunks
+      // Chunks (no LIMIT to show all chunks)
       const chunksQuery = await client.query(`
         SELECT 
+          c.chunk_schema AS schema,
           c.chunk_name AS name,
           c.range_start,
           c.range_end,
@@ -57,10 +58,10 @@ export async function GET() {
           ON c.chunk_schema = s.chunk_schema AND c.chunk_name = s.chunk_name
         WHERE c.hypertable_name = 'telemetry_ts'
         ORDER BY c.range_start DESC
-        LIMIT 100
       `);
 
       const chunks = chunksQuery.rows.map(r => ({
+        schema: r.schema,
         name: r.name,
         rangeStart: r.range_start ? new Date(r.range_start).toISOString() : null,
         rangeEnd: r.range_end ? new Date(r.range_end).toISOString() : null,
@@ -69,6 +70,7 @@ export async function GET() {
       }));
 
       return NextResponse.json({
+        serverTime: new Date().toISOString(),
         pg: {
           totalBytes: parseInt(pgSizes.rows[0]?.total || '0', 10),
           tableBytes: parseInt(pgSizes.rows[0]?.table || '0', 10),
@@ -88,5 +90,102 @@ export async function GET() {
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message?.substring(0, 200) }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { action, chunkName, chunkSchema = '_timescaledb_internal', days } = body;
+
+    return await withClient(async (client) => {
+      // 1. Single chunk compression
+      if (action === 'compress_chunk') {
+        if (!chunkName || typeof chunkName !== 'string') {
+          return NextResponse.json({ error: 'chunkName is required' }, { status: 400 });
+        }
+        const res = await client.query(
+          `SELECT compress_chunk(format('%I.%I', $1::text, $2::text)::regclass, if_not_compressed => true)`,
+          [chunkSchema, chunkName]
+        );
+        return NextResponse.json({
+          success: true,
+          action,
+          chunk: chunkName,
+          result: res.rows[0]?.compress_chunk || null,
+        });
+      }
+
+      // 2. Single chunk decompression
+      if (action === 'decompress_chunk') {
+        if (!chunkName || typeof chunkName !== 'string') {
+          return NextResponse.json({ error: 'chunkName is required' }, { status: 400 });
+        }
+        const res = await client.query(
+          `SELECT decompress_chunk(format('%I.%I', $1::text, $2::text)::regclass, if_compressed => true)`,
+          [chunkSchema, chunkName]
+        );
+        return NextResponse.json({
+          success: true,
+          action,
+          chunk: chunkName,
+          result: res.rows[0]?.decompress_chunk || null,
+        });
+      }
+
+      // 3. Compress all chunks
+      if (action === 'compress_all') {
+        const res = await client.query(`
+          SELECT compress_chunk(c, if_not_compressed => true)
+          FROM show_chunks('telemetry_ts') c
+        `);
+        const affected = res.rows.filter(r => r.compress_chunk != null);
+        return NextResponse.json({
+          success: true,
+          action,
+          count: affected.length,
+          chunks: affected.map(r => r.compress_chunk),
+        });
+      }
+
+      // 4. Decompress all chunks
+      if (action === 'decompress_all') {
+        const res = await client.query(`
+          SELECT decompress_chunk(c, if_compressed => true)
+          FROM show_chunks('telemetry_ts') c
+        `);
+        const affected = res.rows.filter(r => r.decompress_chunk != null);
+        return NextResponse.json({
+          success: true,
+          action,
+          count: affected.length,
+          chunks: affected.map(r => r.decompress_chunk),
+        });
+      }
+
+      // 5. Compress chunks older than N days
+      if (action === 'compress_older_than') {
+        const parsedDays = Number(days);
+        if (isNaN(parsedDays) || parsedDays < 0) {
+          return NextResponse.json({ error: 'Valid non-negative days value is required' }, { status: 400 });
+        }
+        const res = await client.query(`
+          SELECT compress_chunk(c, if_not_compressed => true)
+          FROM show_chunks('telemetry_ts', older_than => format('%s days', $1::int)::interval) c
+        `, [Math.floor(parsedDays)]);
+        const affected = res.rows.filter(r => r.compress_chunk != null);
+        return NextResponse.json({
+          success: true,
+          action,
+          days: Math.floor(parsedDays),
+          count: affected.length,
+          chunks: affected.map(r => r.compress_chunk),
+        });
+      }
+
+      return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
+    }, { timeoutMs: 300000 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message?.substring(0, 300) || 'Compression operation failed' }, { status: 500 });
   }
 }
