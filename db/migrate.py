@@ -33,7 +33,7 @@ load_dotenv()
 # CONFIG
 # =====================================================================
 # Fill in your Tiger Cloud connection string (or set TIGER_CONNECTION_STRING)
-CONNECTION_STRING = os.getenv("TIGER_CONNECTION_STRING", "")
+CONNECTION_STRING = os.getenv("DATABASE_URL", "")
 
 TOTAL_ROWS = 100_000_000                # <-- how many telemetry rows to generate (per table)
 NUM_VEHICLES = 100                # used only if the vehicles table is empty
