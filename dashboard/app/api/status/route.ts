@@ -5,16 +5,27 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const isExact = searchParams.get('exact') === 'true';
+
     return await withReadOnlyClient(async (client) => {
       const serverTime = new Date().toISOString();
 
       const extRes = await client.query("SELECT extversion FROM pg_extension WHERE extname = 'timescaledb'");
       const timescaleVersion = extRes.rows[0]?.extversion || 'unknown';
 
-      const approxPg = await client.query("SELECT approximate_row_count('telemetry_pg') AS count");
-      const approxTs = await client.query("SELECT approximate_row_count('telemetry_ts') AS count");
+      let rowPgCount: any;
+      let rowTsCount: any;
+
+      if (isExact) {
+        rowPgCount = await client.query("SELECT count(*) AS count FROM telemetry_pg");
+        rowTsCount = await client.query("SELECT count(*) AS count FROM telemetry_ts");
+      } else {
+        rowPgCount = await client.query("SELECT approximate_row_count('telemetry_pg') AS count");
+        rowTsCount = await client.query("SELECT approximate_row_count('telemetry_ts') AS count");
+      }
 
       const chunksRes = await client.query(`
         SELECT count(*) AS total, count(*) FILTER (WHERE is_compressed) AS compressed
@@ -53,9 +64,11 @@ export async function GET() {
       return NextResponse.json({
         serverTime,
         timescaleVersion,
+        isExact,
         approxRows: {
-          pg: parseInt(approxPg.rows[0]?.count || '0', 10),
-          ts: parseInt(approxTs.rows[0]?.count || '0', 10),
+          pg: parseInt(rowPgCount.rows[0]?.count || '0', 10),
+          ts: parseInt(rowTsCount.rows[0]?.count || '0', 10),
+          isExact,
         },
         chunks: {
           total: parseInt(chunksRes.rows[0]?.total || '0', 10),
