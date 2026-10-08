@@ -1,3 +1,4 @@
+import { ScenarioConfig, validateScenarios } from "./scenarios";
 export type SimMode = "batch" | "per_row" | "burst";
 export interface SimConfig {
   vehicles: number;
@@ -7,6 +8,7 @@ export interface SimConfig {
   maxRows: number;
   maxMinutes: number;
   dirty: boolean;
+  scenarios?: ScenarioConfig;
 }
 export function validateConfig(c: SimConfig) {
   const errors: Record<string, string> = {};
@@ -22,5 +24,6 @@ export function validateConfig(c: SimConfig) {
         `${label}: enter a whole number from ${min.toLocaleString()} to ${max.toLocaleString()}.`;
   }
   if (!c.targets.length) errors.targets = "Select at least one database.";
+  if (c.scenarios) Object.assign(errors, validateScenarios(c.scenarios));
   return errors;
 }

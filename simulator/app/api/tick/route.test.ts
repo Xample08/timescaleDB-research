@@ -18,7 +18,10 @@ const body = {
   dirty: false,
   tickNo: 0,
 };
-function request(stream = true, payload = body) {
+function request(
+  stream = true,
+  payload: typeof body & { scenarios?: unknown } = body,
+) {
   return new NextRequest("http://localhost/api/tick", {
     method: "POST",
     headers: {
@@ -90,5 +93,50 @@ test("invalid numeric payload never executes SQL", async () => {
     .split("\n")
     .map((line) => JSON.parse(line));
   expect(events.at(-1)).toMatchObject({ type: "result", status: 422 });
+  expect(query).not.toHaveBeenCalled();
+});
+
+test("scenario samples write identical actual values to both targets", async () => {
+  const payload = {
+    ...body,
+    scenarios: {
+      enabled: true,
+      kinds: ["speeding"],
+      chancePercent: 50,
+      speedLimit: 80,
+      stopMinutes: 5,
+      altitudeLimit: 300,
+      gpsLimit: 50,
+    },
+  };
+  const random = vi.spyOn(Math, "random").mockReturnValue(0.25);
+  try {
+    const response = await POST(request(false, payload));
+    const data = await response.json();
+    expect(response.status).toBe(200);
+    expect(data.warnings.speeding).toBe(1);
+    expect(data.vehicles[0].speed).toBeGreaterThan(80);
+    expect(query.mock.calls[0][1]).toEqual(query.mock.calls[1][1]);
+    expect(query.mock.calls[0][1][4]).toBe(data.vehicles[0].speed);
+  } finally {
+    random.mockRestore();
+  }
+});
+test("invalid scenario settings are rejected before database writes", async () => {
+  const response = await POST(
+    request(false, {
+      ...body,
+      scenarios: {
+        enabled: true,
+        kinds: ["speeding"],
+        chancePercent: 5,
+        speedLimit: null,
+        stopMinutes: 5,
+        altitudeLimit: 300,
+        gpsLimit: 50,
+      },
+    }),
+  );
+  expect(response.status).toBe(422);
   expect(query).not.toHaveBeenCalled();
 });

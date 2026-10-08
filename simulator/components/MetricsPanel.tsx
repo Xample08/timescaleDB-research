@@ -1,5 +1,5 @@
 import React from "react";
-import { ResizablePanels } from "./ResizablePanels";
+import type { IncidentKind } from "../lib/scenarios";
 import { Icon } from "./Icon";
 import { Badge, SERIES_COLORS } from "./ui";
 import { formatMs, formatInt, formatDuration } from "@/lib/format";
@@ -49,9 +49,10 @@ export interface MetricsState {
 interface Props {
   metrics: MetricsState;
   config: SimConfig;
+  warningCounts?: Record<IncidentKind, number>;
 }
 
-export function MetricsPanel({ metrics, config }: Props) {
+export function MetricsPanel({ metrics, config, warningCounts }: Props) {
   const {
     status,
     message,
@@ -102,17 +103,8 @@ export function MetricsPanel({ metrics, config }: Props) {
           </span>
         </div>
       </div>
-      <ResizablePanels
-        direction="vertical"
-        label="Reports and latency chart"
-        className="metrics-split"
-        initialSizes={[45, 55]}
-      >
-        <ResizablePanels
-          className="database-grid"
-          label="Database reports"
-          initialSizes={[50, 50]}
-        >
+      <div className="metrics-split">
+        <div className="database-grid">
           {(["pg", "ts"] as const).map((t) => {
             const pg = t === "pg";
             return (
@@ -157,12 +149,46 @@ export function MetricsPanel({ metrics, config }: Props) {
               </section>
             );
           })}
-        </ResizablePanels>
+        </div>
         <section className="chart-panel panel">
           <div className="chart-heading">
             <div>
               <h2>Insert latency</h2>
               <p>Compare response times across the last 300 ticks</p>
+            </div>
+            <div className="chart-health">
+              {config.scenarios?.enabled && warningCounts && (
+                <div className="warning-strip">
+                  <span>
+                    <Icon name="warning" />
+                    Warnings in latest tick
+                  </span>
+                  {(
+                    [
+                      ["speeding", "Speeding"],
+                      ["longStop", "Long stops"],
+                      ["altitude", "Altitude"],
+                      ["poorGps", "Poor GPS"],
+                    ] as const
+                  ).map(([kind, label]) => (
+                    <span
+                      key={kind}
+                      className={warningCounts[kind] ? "has-warning" : ""}
+                    >
+                      {label}
+                      <b>{warningCounts[kind]}</b>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="quality-strip">
+                <span>
+                  <Icon name="check" /> Data quality
+                </span>
+                <span>{formatInt(lateRows)} late records</span>
+                <span>{formatInt(dupRows)} duplicates</span>
+                <span>{formatInt(skippedRows)} skipped</span>
+              </div>
             </div>
             <div className="chart-key">
               <span className="pg">
@@ -242,19 +268,6 @@ export function MetricsPanel({ metrics, config }: Props) {
             )}
           </div>
         </section>
-      </ResizablePanels>
-      <div className="quality-strip">
-        <span>
-          <Icon name="check" /> Data quality
-        </span>
-        <span>{formatInt(lateRows)} late records</span>
-        <span>{formatInt(dupRows)} duplicates</span>
-        <span>{formatInt(skippedRows)} skipped</span>
-        <span>
-          {status === "running"
-            ? "Keep this tab open while running"
-            : "Identical telemetry sent to each selected database"}
-        </span>
       </div>
     </div>
   );

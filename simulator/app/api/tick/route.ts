@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { getPool } from "@/lib/db";
 import {
-  createRandomInitialState,
-  getGpsAccuracy,
-  VehicleState,
-  chunkArray,
-  advanceVehicle,
-} from "@/lib/sim";
+  generateTelemetry,
+  validateScenarios,
+  ScenarioConfig,
+  DEFAULT_SCENARIOS,
+} from "@/lib/scenarios";
+import { getPool } from "@/lib/db";
+import { createRandomInitialState, VehicleState, chunkArray } from "@/lib/sim";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -129,8 +129,27 @@ async function runTick(
     return NextResponse.json({ error: "Invalid JSON" }, { status: 422 });
   }
 
-  const { vehicles, dt, mode, targets, dirty, tickNo, lastTimestamp } = body;
+  const {
+    vehicles,
+    dt,
+    mode,
+    targets,
+    dirty,
+    tickNo,
+    lastTimestamp,
+    scenarios,
+  } = body;
 
+  if (
+    scenarios !== undefined &&
+    (!scenarios ||
+      typeof scenarios !== "object" ||
+      Object.keys(validateScenarios(scenarios)).length)
+  )
+    return NextResponse.json(
+      { error: "Invalid warning scenario settings" },
+      { status: 422 },
+    );
   // Validation
   if (
     !Array.isArray(vehicles) ||
@@ -139,7 +158,7 @@ async function runTick(
   ) {
     return NextResponse.json({ error: "Invalid vehicles" }, { status: 422 });
   }
-  if (typeof dt !== "number" || dt < 0.5 || dt > 60) {
+  if (!Number.isFinite(dt) || dt < 0.5 || dt > 60) {
     return NextResponse.json({ error: "Invalid dt" }, { status: 422 });
   }
   if (mode !== "batch" && mode !== "per_row") {
@@ -158,7 +177,7 @@ async function runTick(
       { status: 422 },
     );
   }
-  if (typeof tickNo !== "number" || tickNo < 0) {
+  if (!Number.isInteger(tickNo) || tickNo < 0) {
     return NextResponse.json({ error: "Invalid tickNo" }, { status: 422 });
   }
 
@@ -173,6 +192,41 @@ async function runTick(
 
   // Validate vehicles
   for (const v of vehicles) {
+    if (
+      !v ||
+      [v.id, v.lat, v.lon, v.speed, v.heading, v.alt, v.stop].some(
+        (value) => !Number.isFinite(value),
+      )
+    )
+      return NextResponse.json(
+        { error: "Invalid vehicle data" },
+        { status: 422 },
+      );
+    if (
+      v.incident &&
+      (!DEFAULT_SCENARIOS.kinds.includes(v.incident.kind) ||
+        !Number.isFinite(v.incident.value) ||
+        v.incident.value < -500 ||
+        v.incident.value > 9000 ||
+        !Number.isFinite(Date.parse(v.incident.startedAt)) ||
+        !Number.isFinite(Date.parse(v.incident.until)) ||
+        (v.incident.kind === "speeding" &&
+          (v.incident.value < 0 || v.incident.value > 200)) ||
+        (v.incident.kind === "longStop" && v.incident.value !== 0) ||
+        (v.incident.kind === "poorGps" && v.incident.value < 0))
+    )
+      return NextResponse.json(
+        { error: "Invalid incident state" },
+        { status: 422 },
+      );
+    if (
+      v.stoppedSince !== undefined &&
+      !Number.isFinite(Date.parse(v.stoppedSince))
+    )
+      return NextResponse.json(
+        { error: "Invalid stop timestamp" },
+        { status: 422 },
+      );
     if (
       typeof v.id !== "number" ||
       v.id < 1 ||
@@ -202,29 +256,37 @@ async function runTick(
     }
   }
 
-  // advance vehicle (client sends current state, we generate NEXT state here or apply rows? Wait, 5.3 says:
-  // request has states, response has "next states". Wait, if we advance here, the DB gets the *new* states?
-  // Let's use the provided states to advance. Wait, the spec says "Each tick...: 1. if stop > 0 ..." in 5.4.
-  // Actually, wait, it says "The client keeps vehicle states... and sends them with every tick."
-  // So we advance them here, and write the advanced states to the DB.
-
-  const nextVehicles = vehicles.map((v: VehicleState) =>
-    advanceVehicle(v, dt, Math.random),
+  const generated = vehicles.map((v: VehicleState) =>
+    generateTelemetry(
+      v,
+      dt,
+      timestampIso,
+      scenarios as ScenarioConfig | undefined,
+      Math.random,
+    ),
   );
+  const nextVehicles = generated.map(
+    (sample: ReturnType<typeof generateTelemetry>) => sample.vehicle,
+  );
+  const warnings = { speeding: 0, longStop: 0, altitude: 0, poorGps: 0 };
+  for (const sample of generated)
+    for (const kind of sample.warnings)
+      warnings[kind as keyof typeof warnings]++;
 
   // Build rows to insert
   const rowsToInsert: (string | number)[][] = [];
   let lateCount = 0;
   let dupCount = 0;
 
-  for (const v of nextVehicles) {
+  for (const sample of generated) {
+    const v = sample.vehicle;
     let t = timestampIso;
     if (dirty && Math.random() < 0.02) {
       const delay = 60000 + Math.random() * (86400000 - 60000);
       t = new Date(tsDate.getTime() - delay).toISOString();
       lateCount++;
     }
-    const acc = getGpsAccuracy(Math.random);
+    const acc = sample.accuracy;
     const row = [t, v.id, v.lat, v.lon, v.speed, v.heading, v.alt, acc];
     rowsToInsert.push(row);
 
@@ -359,6 +421,7 @@ async function runTick(
   }
 
   return NextResponse.json({
+    warnings,
     vehicles: nextVehicles,
     timestamp: timestampIso,
     attempted,

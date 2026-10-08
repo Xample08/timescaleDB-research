@@ -611,9 +611,6 @@ h2 {
   .database-tag {
     display: none;
   }
-  .report-values {
-    grid-template-columns: 1fr;
-  }
   .sql-targets {
     grid-template-columns: 1fr;
   }
@@ -1099,10 +1096,6 @@ h2 {
   .database-tag {
     display: none;
   }
-  .report-values {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
   .chart-key {
     display: none;
   }
@@ -1169,7 +1162,7 @@ h2 {
 .workspace-grid.resizable-panels {
   height: calc(100dvh - 169px);
   min-height: 480px;
-  resize: vertical;
+  resize: none;
   overflow: hidden;
   max-height: none;
   padding-bottom: 8px;
@@ -1187,7 +1180,7 @@ h2 {
   flex-direction: column;
 }
 .sql-window .sql-query pre {
-  resize: vertical;
+  resize: none;
   min-height: 65px;
   max-height: none;
   height: 125px;
@@ -1226,7 +1219,7 @@ h2 {
   }
   .workspace-grid .sql-window {
     height: 650px;
-    resize: vertical;
+    resize: none;
     overflow: auto;
     min-height: 350px;
   }
@@ -1264,4 +1257,266 @@ h2 {
     height: 500px;
     flex: auto;
   }
+}
+
+.scenario-settings {
+  border: 1px solid #374662;
+  background: #111d30;
+  border-radius: 9px;
+}
+.scenario-settings summary {
+  cursor: pointer;
+  padding: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.scenario-settings summary .icon {
+  width: 13px;
+  height: 13px;
+  margin-right: 5px;
+  color: #fbbf24;
+}
+.scenario-settings summary > span {
+  float: right;
+  color: #fbbf24;
+  font-size: 9px;
+}
+.scenario-content {
+  padding: 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 10px;
+}
+.scenario-kinds {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+.scenario-content .floating-field label {
+  font-size: 8px;
+}
+.warning-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  font-size: 10px;
+  color: #9aabc2;
+}
+.warning-strip > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 6px;
+  padding: 5px 7px;
+  background: #142238;
+}
+.warning-strip .icon {
+  width: 12px;
+  height: 12px;
+}
+.warning-strip b {
+  color: #e2e8f0;
+}
+.warning-strip .has-warning {
+  background: #423117;
+  color: #fbbf24;
+}
+.warning-strip .has-warning b {
+  color: #fcd34d;
+}
+
+/* Graph summaries and contextual input help. */
+.chart-heading {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.chart-health {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: 100%;
+}
+.chart-health .warning-strip,
+.chart-health .quality-strip {
+  justify-content: flex-end;
+  gap: 5px;
+  padding: 0;
+  font-size: 9px;
+}
+.chart-health .warning-strip > span {
+  padding: 3px 5px;
+}
+.chart-health .quality-strip > span:last-child {
+  margin-left: 0;
+}
+.chart-health .quality-strip > span {
+  white-space: nowrap;
+}
+.chart-key {
+  flex-basis: 100%;
+  justify-content: flex-end;
+}
+.info-tip {
+  display: inline-flex;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.info-button {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid #526784;
+  border-radius: 50%;
+  color: #9fb8d8;
+  background: #15243b;
+  font:
+    600 10px Georgia,
+    serif;
+  line-height: 1;
+  cursor: help;
+}
+.info-button:hover,
+.info-button:focus-visible {
+  color: #dbeafe;
+  border-color: #60a5fa;
+  background: #203b5c;
+}
+.info-popup {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(260px, calc(100vw - 24px));
+  padding: 12px;
+  border: 1px solid #405876;
+  border-radius: 10px;
+  color: #c5d3e5;
+  background: #17263c;
+  box-shadow: 0 10px 35px #00000060;
+  font-size: 11px;
+  line-height: 1.6;
+  z-index: 100;
+}
+.info-popup strong {
+  display: block;
+  color: #93c5fd;
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+.info-popup > span {
+  display: block;
+}
+.floating-field > .info-tip {
+  position: absolute;
+  right: 10px;
+  top: 7px;
+}
+.number-field .floating-field > .info-tip {
+  right: 30px;
+}
+.floating-field label {
+  max-width: calc(100% - 37px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.number-field .floating-field label {
+  max-width: calc(100% - 57px);
+}
+.checkbox-with-help {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.checkbox-with-help > .custom-checkbox {
+  flex: 1;
+  min-width: 0;
+}
+.target-options > .checkbox-with-help {
+  flex: 1;
+}
+.target-options .target {
+  padding: 9px 5px;
+  font-size: 9px;
+}
+.slider-row .number-field {
+  width: 100px;
+}
+.field-caption > .info-tip {
+  margin-left: 4px;
+}
+@media (max-width: 600px) {
+  .chart-health {
+    width: 100%;
+  }
+}
+
+/* Keep the controls card behind all expanded content; scroll its outer pane. */
+.workspace-grid > .resizable-pane > .controls {
+  flex: 0 0 auto;
+  min-height: 100%;
+  height: auto;
+}
+.info-popup {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 1000px) {
+  .workspace-grid > .resizable-pane > .controls {
+    min-height: auto;
+  }
+}
+
+/* Keep the two report measurements beside one another. */
+.report-values {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.report-values > div {
+  min-width: 0;
+}
+.report-values strong {
+  font-size: clamp(18px, 1.8vw, 27px);
+  overflow-wrap: anywhere;
+}
+.report-values > div + div {
+  border-left: 1px solid #2c3a50;
+  padding-left: 12px;
+}
+
+.metrics-split > .resizable-pane > .database-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.metrics-split .database-grid > .database-report {
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Report cards use their content height; the chart takes remaining space. */
+.metrics-split {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.metrics-split > .database-grid {
+  height: auto;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.metrics-split .database-grid > .database-report {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+.metrics-split > .chart-panel {
+  flex: 1;
+  min-height: 150px;
 }

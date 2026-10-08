@@ -1,3 +1,4 @@
+import { DEFAULT_LAYOUT } from "@/lib/layout";
 import React, { useState } from "react";
 import { ResizablePanels } from "./ResizablePanels";
 import { Icon } from "./Icon";
@@ -126,7 +127,7 @@ export function SqlWindow({
         className="sql-targets"
         direction="vertical"
         label="SQL history"
-        initialSizes={[50, 50]}
+        initialSizes={DEFAULT_LAYOUT.sqlHistory}
       >
         {(["pg", "ts"] as const).map((t) => (
           <DatabaseHistory

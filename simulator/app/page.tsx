@@ -1,6 +1,8 @@
 "use client";
 
+import { DEFAULT_LAYOUT } from "@/lib/layout";
 import { ResizablePanels } from "@/components/ResizablePanels";
+import { DEFAULT_SCENARIOS, IncidentKind } from "@/lib/scenarios";
 import { Icon } from "@/components/Icon";
 import React, { useState, useEffect, useRef } from "react";
 import { SqlWindow } from "@/components/SqlWindow";
@@ -26,6 +28,7 @@ export default function SimulatorPage() {
     maxRows: 500000,
     maxMinutes: 30,
     dirty: false,
+    scenarios: DEFAULT_SCENARIOS,
   });
 
   const configRef = useRef(config);
@@ -36,6 +39,9 @@ export default function SimulatorPage() {
   const [layoutVersion, setLayoutVersion] = useState(0);
   const [password, setPassword] = useState("");
 
+  const [warningCounts, setWarningCounts] = useState<
+    Record<IncidentKind, number>
+  >({ speeding: 0, longStop: 0, altitude: 0, poorGps: 0 });
   const [metrics, setMetrics] = useState<MetricsState>({
     status: "idle",
     message: null,
@@ -222,6 +228,7 @@ export default function SimulatorPage() {
           mode: config.mode === "burst" ? "batch" : config.mode,
           targets: config.targets,
           dirty: config.dirty,
+          scenarios: config.scenarios,
           tickNo: s.tickNo,
           lastTimestamp: s.lastTimestamp,
         }),
@@ -281,6 +288,7 @@ export default function SimulatorPage() {
         late: number;
         duplicates: number;
         errors: TickMetric["errors"];
+        warnings: Record<IncidentKind, number>;
       };
       s.consecutiveErrors =
         data.errors && (data.errors.pg || data.errors.ts)
@@ -293,6 +301,7 @@ export default function SimulatorPage() {
         return;
       }
 
+      setWarningCounts(data.warnings);
       s.vehicles = data.vehicles;
       s.lastTimestamp = data.timestamp;
 
@@ -349,6 +358,7 @@ export default function SimulatorPage() {
       });
       return;
     }
+    setWarningCounts({ speeding: 0, longStop: 0, altitude: 0, poorGps: 0 });
     updateMetrics({
       status: "starting",
       message: "Initializing...",
@@ -434,10 +444,6 @@ export default function SimulatorPage() {
             <Icon name="simulator" />
             Simulator
           </a>
-          <a href="#sql-activity">
-            <Icon name="sql" />
-            SQL activity
-          </a>
         </nav>
         <span className="topbar-caption">
           PostgreSQL <span>vs</span> TimescaleDB
@@ -468,7 +474,7 @@ export default function SimulatorPage() {
         key={layoutVersion}
         className="workspace-grid"
         label="Workspace"
-        initialSizes={[23, 40, 37]}
+        initialSizes={DEFAULT_LAYOUT.workspace}
       >
         <ControlPanel
           config={config}
@@ -482,7 +488,11 @@ export default function SimulatorPage() {
           onStop={handleStop}
         />
         <div className="results-workspace">
-          <MetricsPanel metrics={metrics} config={config} />
+          <MetricsPanel
+            metrics={metrics}
+            config={config}
+            warningCounts={warningCounts}
+          />
         </div>
         <SqlWindow queries={queries} targets={config.targets} />
       </ResizablePanels>
