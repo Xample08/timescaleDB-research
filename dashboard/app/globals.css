@@ -1,5 +1,55 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+.vehicle-map-marker {
+  background: transparent;
+  border: 0;
+}
+.vehicle-map-symbol {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  background: transparent;
+  border: 0;
+  color: var(--vehicle-color);
+}
+.vehicle-map-car {
+  width: 26px;
+  height: 32px;
+  overflow: visible;
+  transition: scale 0.15s;
+}
+.vehicle-map-symbol.is-stale .vehicle-map-car {
+  opacity: 0.65;
+}
+.vehicle-map-symbol.is-selected .vehicle-map-car,
+.vehicle-map-marker:focus-visible .vehicle-map-car {
+  scale: 1.2;
+}
+.vehicle-map-marker:focus-visible {
+  outline: none;
+}
+.map-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.map-legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+@media (max-width: 700px) {
+  .topbar .app-navigation details .nav-children {
+    position: fixed;
+    top: 70px;
+    left: 10px;
+    right: 10px;
+    min-width: 0;
+  }
+}
 .topbar .app-navigation {
   display: flex;
   gap: 8px;

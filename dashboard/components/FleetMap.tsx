@@ -71,12 +71,34 @@ export default function FleetMap({
               : "#2dd4bf";
         const content = document.createElement("span");
         content.textContent = `${v.plate} / ${vehicleState(v, checkedAt)} / ${v.speed ?? "Unknown"} km/h`;
-        L.circleMarker(point, {
-          radius: selected === v.id ? 11 : 7,
-          color,
-          weight: selected === v.id ? 4 : 2,
-          fillColor: color,
-          fillOpacity: stale ? 0.35 : 0.8,
+        const hasWarning = warningIds.includes(v.id);
+        const isSelected = selected === v.id;
+        const marker = document.createElement("div");
+        marker.className = `vehicle-map-symbol${stale ? " is-stale" : ""}${isSelected ? " is-selected" : ""}`;
+        marker.style.setProperty("--vehicle-color", color);
+        const car = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "svg",
+        );
+        car.setAttribute("viewBox", "0 0 32 40");
+        car.setAttribute("aria-hidden", "true");
+        car.classList.add("vehicle-map-car");
+        car.style.transform = `rotate(${Number.isFinite(v.heading) ? v.heading : 0}deg)`;
+        car.innerHTML =
+          '<rect x="5" y="13" width="4" height="7" rx="1.5" fill="#050c16"/><rect x="23" y="13" width="4" height="7" rx="1.5" fill="#050c16"/><rect x="5" y="27" width="4" height="7" rx="1.5" fill="#050c16"/><rect x="23" y="27" width="4" height="7" rx="1.5" fill="#050c16"/><rect x="8" y="8" width="16" height="29" rx="5" fill="currentColor"/><path d="m11 16 1-4h8l1 4z" fill="#142136"/><rect x="11" y="18" width="10" height="9" rx="2" fill="#142136"/><path d="m11 29 1 4h8l1-4z" fill="#142136"/><path d="M10 10h3m6 0h3" stroke="#f8fafc" stroke-width="2" stroke-linecap="round"/><path d="M10 35h3m6 0h3" stroke="#fb7185" stroke-width="1.5" stroke-linecap="round"/>';
+        marker.append(car);
+        L.marker(point, {
+          icon: L.divIcon({
+            html: marker,
+            className: "vehicle-map-marker",
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            tooltipAnchor: [0, -22],
+          }),
+          title: `${v.plate}${hasWarning ? " / Active warning" : ""} / ${vehicleState(v, checkedAt)}`,
+          alt: `Vehicle ${v.plate}`,
+          zIndexOffset: isSelected ? 1000 : hasWarning ? 500 : 0,
+          riseOnHover: true,
         })
           .bindTooltip(content)
           .on("click", () => onSelect(v.id))
@@ -111,9 +133,18 @@ export default function FleetMap({
         </div>
       )}
       <div className="map-legend">
-        <span>Current</span>
-        <span className="amber">Warning</span>
-        <span className="muted">Stale</span>
+        <span>
+          <i className="map-legend-dot" />
+          Current
+        </span>
+        <span className="amber">
+          <i className="map-legend-dot" />
+          Warning
+        </span>
+        <span className="muted">
+          <i className="map-legend-dot" />
+          Stale
+        </span>
       </div>
     </div>
   );
