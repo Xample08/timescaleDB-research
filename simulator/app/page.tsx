@@ -477,6 +477,10 @@ export default function SimulatorPage() {
             <Icon name="simulator" />
             Simulator
           </a>
+          <a href="/bulk">
+            <Icon name="database" />
+            Bulk data
+          </a>
         </nav>
         <span className="topbar-caption">
           PostgreSQL <span>vs</span> TimescaleDB
