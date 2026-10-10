@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "tune:bulk": "node --experimental-strip-types --expose-gc scripts/tune-bulk.mjs"
   },
   "dependencies": {
     "next": "16.4.0",

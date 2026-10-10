@@ -1,0 +1,137 @@
+{
+  "testedAt": "2026-10-10T16:09:16.752Z",
+  "results": [
+    {
+      "count": 10000,
+      "generatedMs": 25,
+      "pgMs": 2628,
+      "tsMs": 890,
+      "elapsedMs": 3544,
+      "rowsPerSecondPerTable": 2822,
+      "rssMiB": 90
+    },
+    {
+      "count": 15000,
+      "generatedMs": 31,
+      "pgMs": 868,
+      "tsMs": 679,
+      "elapsedMs": 1578,
+      "rowsPerSecondPerTable": 9505,
+      "rssMiB": 106
+    },
+    {
+      "count": 23000,
+      "generatedMs": 46,
+      "pgMs": 974,
+      "tsMs": 919,
+      "elapsedMs": 1938,
+      "rowsPerSecondPerTable": 11866,
+      "rssMiB": 113
+    },
+    {
+      "count": 35000,
+      "generatedMs": 76,
+      "pgMs": 1424,
+      "tsMs": 1321,
+      "elapsedMs": 2821,
+      "rowsPerSecondPerTable": 12408,
+      "rssMiB": 133
+    },
+    {
+      "count": 53000,
+      "generatedMs": 110,
+      "pgMs": 1829,
+      "tsMs": 1782,
+      "elapsedMs": 3720,
+      "rowsPerSecondPerTable": 14247,
+      "rssMiB": 146
+    },
+    {
+      "count": 80000,
+      "generatedMs": 179,
+      "pgMs": 2317,
+      "tsMs": 2482,
+      "elapsedMs": 4978,
+      "rowsPerSecondPerTable": 16071,
+      "rssMiB": 182
+    },
+    {
+      "count": 120000,
+      "generatedMs": 346,
+      "pgMs": 3748,
+      "tsMs": 3619,
+      "elapsedMs": 7714,
+      "rowsPerSecondPerTable": 15557,
+      "rssMiB": 201
+    },
+    {
+      "count": 180000,
+      "generatedMs": 423,
+      "pgMs": 7121,
+      "tsMs": 4567,
+      "elapsedMs": 12111,
+      "rowsPerSecondPerTable": 14862,
+      "rssMiB": 305
+    },
+    {
+      "count": 270000,
+      "generatedMs": 691,
+      "pgMs": 7156,
+      "tsMs": 7679,
+      "elapsedMs": 15527,
+      "rowsPerSecondPerTable": 17389,
+      "rssMiB": 502
+    },
+    {
+      "count": 405000,
+      "generatedMs": 918,
+      "pgMs": 13166,
+      "tsMs": 11353,
+      "elapsedMs": 25437,
+      "rowsPerSecondPerTable": 15922,
+      "rssMiB": 183
+    },
+    {
+      "count": 608000,
+      "generatedMs": 1446,
+      "pgMs": 18950,
+      "tsMs": 18768,
+      "elapsedMs": 39164,
+      "rowsPerSecondPerTable": 15524,
+      "rssMiB": 265
+    },
+    {
+      "count": 270000,
+      "generatedMs": 646,
+      "pgMs": 9591,
+      "tsMs": 6962,
+      "elapsedMs": 17200,
+      "rowsPerSecondPerTable": 15698,
+      "rssMiB": 404
+    },
+    {
+      "count": 270000,
+      "generatedMs": 682,
+      "pgMs": 8152,
+      "tsMs": 8286,
+      "elapsedMs": 17120,
+      "rowsPerSecondPerTable": 15771,
+      "rssMiB": 433
+    },
+    {
+      "count": 270000,
+      "generatedMs": 753,
+      "pgMs": 7443,
+      "tsMs": 8636,
+      "elapsedMs": 16833,
+      "rowsPerSecondPerTable": 16040,
+      "rssMiB": 500
+    }
+  ],
+  "limit": "30-second combined batch time budget",
+  "largestWithinBudget": 405000,
+  "recommended": 270000,
+  "memoryBudgetMiB": 1347,
+  "notes": "Rollback probes: no test telemetry retained; excludes commit cost; timings depend on load and cache. RSS is an end-of-insert snapshot, not peak memory. Select the largest batch within 5% of the best median throughput, with every successful sample below 21s. Limits are operational budgets, not PostgreSQL row limits.",
+  "failedCounts": []
+}

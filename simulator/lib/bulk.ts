@@ -11,7 +11,16 @@ export interface BulkJob {
   updatedAt: string;
   lastError: string | null;
 }
-export const BULK_BATCH_SIZE = 2000;
+// Selected from rollback probes of both tables; keep headroom for durable commits.
+export const BULK_BATCH_SIZE = 270000;
+export function bulkInsertSql(table: "telemetry_pg" | "telemetry_ts") {
+  return `INSERT INTO ${table} (time,vehicle_id,latitude,longitude,speed_kmh,heading_deg,altitude_m,gps_accuracy_m)
+          SELECT * FROM unnest($1::timestamptz[],$2::integer[],$3::double precision[],$4::double precision[],$5::real[],$6::real[],$7::real[],$8::real[])`;
+}
+export function bulkColumns(job: BulkJob, count: number): unknown[][] {
+  const rows = bulkRows(job, count);
+  return Array.from({ length: 8 }, (_, col) => rows.map((row) => row[col]));
+}
 export function validateBulkInput(
   total: unknown,
   vehicles: unknown,

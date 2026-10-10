@@ -3,7 +3,8 @@ import { checkPassword } from "@/lib/auth";
 import {
   BulkJob,
   BULK_BATCH_SIZE,
-  bulkRows,
+  bulkColumns,
+  bulkInsertSql,
   validateBulkInput,
 } from "@/lib/bulk";
 import crypto from "crypto";
@@ -85,7 +86,7 @@ export async function POST(req: Request) {
     return Response.json(
       {
         error:
-          "Enter 1–100,000,000 rows, 1–1,000 vehicles, and 1–365 history days",
+          "Enter a positive safe integer for rows, 1–1,000 vehicles, and 1–365 history days",
       },
       { status: 422 },
     );
@@ -144,17 +145,12 @@ export async function POST(req: Request) {
       if (body.action === "step" && job.status === "running") {
         const count = Math.min(BULK_BATCH_SIZE, job.total - job.processed);
         if (count > 0) {
-          const rows = bulkRows(job, count);
-          const values = rows.flat();
-          const placeholders = rows
-            .map(
-              (_, index) =>
-                `(${Array.from({ length: 8 }, (_, col) => `$${index * 8 + col + 1}`).join(",")})`,
-            )
-            .join(",");
-          for (const table of ["telemetry_pg", "telemetry_ts"]) {
+          // Eight array parameters keep the statement small even for large batches.
+          // Build every column from the same rows to preserve alignment in unnest.
+          const values = bulkColumns(job, count);
+          for (const table of ["telemetry_pg", "telemetry_ts"] as const) {
             const result = await client.query(
-              `INSERT INTO ${table} (time,vehicle_id,latitude,longitude,speed_kmh,heading_deg,altitude_m,gps_accuracy_m) VALUES ${placeholders}`,
+              bulkInsertSql(table),
               values,
             );
             if (result.rowCount !== count)

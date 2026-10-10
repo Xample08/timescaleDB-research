@@ -1,6 +1,11 @@
 import { beforeEach, expect, test, vi } from "vitest";
-import type { BulkJob } from "@/lib/bulk";
+import { bulkRows, BULK_BATCH_SIZE, type BulkJob } from "@/lib/bulk";
 const mocks = vi.hoisted(() => ({ query: vi.fn(), release: vi.fn() }));
+// Exercise transaction boundaries with smaller fixtures; production batches are probed live.
+vi.mock("@/lib/bulk", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/bulk")>()),
+  BULK_BATCH_SIZE: 10000,
+}));
 vi.mock("@/lib/db", () => ({
   getPool: () => ({
     connect: async () => ({ query: mocks.query, release: mocks.release }),
@@ -24,7 +29,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   stored = {
     id,
-    total: 3500,
+    total: 17500,
     processed: 0,
     vehicleIds: [1, 2],
     days: 14,
@@ -56,9 +61,10 @@ beforeEach(() => {
       if (sql.startsWith("INSERT INTO telemetry_")) {
         const target = sql.includes("telemetry_pg") ? "pg" : "ts";
         if (target === "ts" && failTs) throw new Error("TS unavailable");
-        for (let i = 0; i < values.length; i += 8)
-          pending[target].push(`${values[i]}-${values[i + 1]}`);
-        return { rowCount: values.length / 8 };
+        const columns = values as unknown[][];
+        for (let i = 0; i < columns[0].length; i++)
+          pending[target].push(`${columns[0][i]}-${columns[1][i]}`);
+        return { rowCount: columns[0].length };
       }
       if (sql === "COMMIT") {
         stored = staged;
@@ -71,13 +77,31 @@ beforeEach(() => {
   );
 });
 test("commits identical data and checkpoint together; final batch stops at exactly N", async () => {
-  expect((await (await POST(request("step"))).json()).job.processed).toBe(2000);
+  expect((await (await POST(request("step"))).json()).job.processed).toBe(10000);
   const final = await (await POST(request("step"))).json();
-  expect(final.job).toMatchObject({ processed: 3500, status: "completed" });
+  expect(final.job).toMatchObject({ processed: 17500, status: "completed" });
   await POST(request("step"));
   expect(rows.pg).toEqual(rows.ts);
-  expect(rows.pg).toHaveLength(3500);
-  expect(new Set(rows.pg).size).toBe(3500);
+  expect(rows.pg).toHaveLength(17500);
+  expect(new Set(rows.pg).size).toBe(17500);
+});
+test("large batches use eight aligned array parameters and preserve every generated field", async () => {
+  const expected = bulkRows(stored!, BULK_BATCH_SIZE);
+  await POST(request("step"));
+  const inserts = mocks.query.mock.calls.filter(([sql]) =>
+    sql.startsWith("INSERT INTO telemetry_"),
+  );
+  expect(inserts).toHaveLength(2);
+  for (const [sql, columns] of inserts) {
+    expect(sql).toContain("SELECT * FROM unnest(");
+    expect(columns).toHaveLength(8);
+    expect(columns.every((column: unknown[]) => column.length === BULK_BATCH_SIZE)).toBe(true);
+    const reconstructed = expected.map((_, index) =>
+      columns.map((column: unknown[]) => column[index]),
+    );
+    expect(reconstructed).toEqual(expected);
+  }
+  expect(inserts[0][1]).toEqual(inserts[1][1]);
 });
 test("second-table failure rolls back both inserts and checkpoint, then retry is safe", async () => {
   failTs = true;
@@ -86,7 +110,7 @@ test("second-table failure rolls back both inserts and checkpoint, then retry is
   expect(rows.pg).toHaveLength(0);
   failTs = false;
   await POST(request("step"));
-  expect(stored?.processed).toBe(2000);
+  expect(stored?.processed).toBe(10000);
   expect(rows.pg).toEqual(rows.ts);
   expect(mocks.query).toHaveBeenCalledWith("ROLLBACK");
 });
@@ -97,11 +121,11 @@ test("pause prevents writes until explicit resume", async () => {
   expect(stored?.status).toBe("paused");
   await POST(request("resume"));
   await POST(request("step"));
-  expect(rows.pg).toHaveLength(2000);
+  expect(rows.pg).toHaveLength(10000);
 });
 test("creation retry with the same ID does not create another fleet", async () => {
   stored = null;
-  const payload = { total: 3500, vehicles: 2, days: 14 };
+  const payload = { total: 17500, vehicles: 2, days: 14 };
   await POST(request("create", payload));
   await POST(request("create", payload));
   expect(
