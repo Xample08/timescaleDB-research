@@ -1,5 +1,6 @@
 export function formatMs(n: number | null | undefined): string {
   if (n == null) return "—";
+  if (n > 0 && n < 1) return `${n.toPrecision(3)} ms`;
   if (n >= 1000) return `${(n / 1000).toFixed(2)} s`;
   return `${n.toFixed(2)} ms`;
 }

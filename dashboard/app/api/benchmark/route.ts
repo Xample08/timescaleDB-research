@@ -23,6 +23,18 @@ async function runPOST(req: Request) {
     } = body;
 
     const queryDef = getQueryDef(queryId);
+    if (
+      (bodyRefTime && !Number.isFinite(new Date(bodyRefTime).getTime())) ||
+      (bodyVehicleId != null &&
+        (!Number.isInteger(bodyVehicleId) ||
+          bodyVehicleId < 1 ||
+          bodyVehicleId > 2147483647))
+    ) {
+      return NextResponse.json(
+        { error: "Invalid reference time or vehicle ID" },
+        { status: 422 },
+      );
+    }
     if (!variants || !Array.isArray(variants) || variants.length === 0) {
       return NextResponse.json({ error: "invalid variants" }, { status: 422 });
     }
@@ -36,6 +48,7 @@ async function runPOST(req: Request) {
     }
 
     return await withReadOnlyClient(async (client) => {
+      await client.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
       let refTimeStr = bodyRefTime;
       if (!refTimeStr) {
         const latestPg = await client.query(
@@ -61,9 +74,19 @@ async function runPOST(req: Request) {
       const refTime = new Date(refTimeStr);
 
       let vehicleId = bodyVehicleId;
-      if (vehicleId == null) {
+      if (vehicleId == null && ["B2", "B3", "B4"].includes(queryId)) {
+        const duration =
+          queryId === "B2"
+            ? 3600000
+            : queryId === "B3"
+              ? 86400000
+              : 7 * 86400000;
         const vRes = await client.query(
-          "SELECT id FROM vehicles WHERE is_active = true ORDER BY id LIMIT 1",
+          `SELECT v.id FROM vehicles v WHERE v.is_active
+           AND EXISTS (SELECT 1 FROM telemetry_pg t WHERE t.vehicle_id=v.id AND time >= $1 AND time < $2)
+           AND EXISTS (SELECT 1 FROM telemetry_ts t WHERE t.vehicle_id=v.id AND time >= $1 AND time < $2)
+           ORDER BY v.id LIMIT 1`,
+          [new Date(refTime.getTime() - duration), refTime],
         );
         if (vRes.rows.length > 0) vehicleId = vRes.rows[0].id;
       }
@@ -72,7 +95,7 @@ async function runPOST(req: Request) {
       let b7error = null;
       let safeRefTimeForB7 = refTime;
 
-      if (queryId === "B7") {
+      if (queryId === "B7" && variants.includes("ts_cagg")) {
         const aggBounds = await client.query(
           "SELECT min(bucket) as min_b, max(bucket) as max_b FROM telemetry_hourly",
         );
@@ -107,6 +130,7 @@ async function runPOST(req: Request) {
           continue;
         }
 
+        await client.query("SAVEPOINT benchmark_variant");
         try {
           const { sql, values } = queryDef.buildSql(
             variant as Variant,
@@ -115,13 +139,14 @@ async function runPOST(req: Request) {
             false,
           );
 
-          const explainSql = `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${sql}`;
+          const explainSql = `EXPLAIN (ANALYZE, BUFFERS, TIMING OFF, FORMAT JSON) ${sql}`;
           const res = await client.query(explainSql, values);
 
           // Postgres plan can be returned as object or string.
           // Usually 'EXPLAIN FORMAT JSON' returns an array inside the row.
           const planData = res.rows[0]["QUERY PLAN"];
           const parsed = parsePlanJson(planData);
+          await client.query("RELEASE SAVEPOINT benchmark_variant");
 
           results.push({
             variant,
@@ -129,6 +154,8 @@ async function runPOST(req: Request) {
             error: null,
           });
         } catch (err) {
+          await client.query("ROLLBACK TO SAVEPOINT benchmark_variant");
+          await client.query("RELEASE SAVEPOINT benchmark_variant");
           results.push({
             variant,
             executionMs: 0,

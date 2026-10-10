@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { checkPassword } from "@/lib/auth";
 import {
   generateTelemetry,
   validateScenarios,
@@ -13,25 +14,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-function checkPassword(req: NextRequest): boolean {
-  const reqPwd = req.headers.get("x-sim-password") || "";
-  const sysPwd = process.env.SIM_PASSWORD || "";
-
-  const reqHash = crypto.createHash("sha256").update(reqPwd).digest();
-  const sysHash = crypto.createHash("sha256").update(sysPwd).digest();
-
-  if (reqHash.length !== sysHash.length) return false;
-  return crypto.timingSafeEqual(reqHash, sysHash);
-}
-
 export async function GET(req: NextRequest) {
   if (!checkPassword(req)) {
     return NextResponse.json({ error: "Invalid password" }, { status: 401 });
   }
 
   const url = new URL(req.url);
-  const n = parseInt(url.searchParams.get("n") || "0", 10);
-  if (isNaN(n) || n < 1 || n > 1000) {
+  const n = Number(url.searchParams.get("n") || "0");
+  if (!Number.isInteger(n) || n < 1 || n > 1000) {
     return NextResponse.json({ error: "Invalid n" }, { status: 422 });
   }
 
@@ -47,7 +37,12 @@ export async function GET(req: NextRequest) {
     );
     if (vRes.rows.length < n) {
       return NextResponse.json(
-        { error: `Only ${vRes.rows.length} active vehicles exist` },
+        {
+          error: `Only ${vRes.rows.length} active vehicles exist`,
+          code: "VEHICLES_REQUIRED",
+          available: vRes.rows.length,
+          missing: n - vRes.rows.length,
+        },
         { status: 422 },
       );
     }

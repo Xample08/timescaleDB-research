@@ -377,24 +377,57 @@ export default function SimulatorPage() {
     };
 
     try {
-      const res = await fetch(`/api/tick?n=${config.vehicles}`, {
-        headers: { "x-sim-password": password },
-      });
+      const initialize = () =>
+        fetch(`/api/tick?n=${config.vehicles}`, {
+          headers: { "x-sim-password": password },
+        });
+      let res = await initialize();
+      let data = await res.json().catch(() => ({}));
+      let added = 0;
+      if (!res.ok && data.code === "VEHICLES_REQUIRED") {
+        const confirmed = window.confirm(
+          `You requested ${config.vehicles} vehicles, but only ${data.available} active vehicles exist. Add ${data.missing} new simulated vehicles to the database and start the simulation?`,
+        );
+        if (!confirmed) {
+          stateRef.current.status = "idle";
+          updateMetrics({
+            status: "idle",
+            message: "Vehicle creation cancelled. No vehicles were added.",
+          });
+          return;
+        }
+        const creation = await fetch("/api/vehicles", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-sim-password": password,
+          },
+          body: JSON.stringify({
+            targetCount: config.vehicles,
+            confirmed: true,
+          }),
+        });
+        const created = await creation.json();
+        if (!creation.ok)
+          throw new Error(created.error || "Vehicle creation failed");
+        added = created.added;
+        res = await initialize();
+        data = await res.json().catch(() => ({}));
+      }
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
+        stateRef.current.status = "failed";
         updateMetrics({
           status: "failed",
-          message: body.error || "Initialization failed",
+          message: data.error || "Initialization failed",
         });
         return;
       }
-      const data = await res.json();
       stateRef.current.vehicles = data.vehicles;
       stateRef.current.status = "running";
       stateRef.current.startTime = Date.now();
       updateMetrics({
         status: "running",
-        message: `Started. Resumed ${data.resumed} vehicles.`,
+        message: `Started with ${data.vehicles.length} vehicles. Added ${added}; resumed ${data.resumed}.`,
       });
 
       await requestWakeLock();

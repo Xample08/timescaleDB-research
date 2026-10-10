@@ -1,5 +1,226 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+.benchmark-outcome {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 6px 0 9px;
+  font-size: 9px;
+}
+.benchmark-outcome small {
+  color: #9aabc2;
+}
+.benchmark-winner {
+  color: #86efac;
+  background: #123029;
+  border: 1px solid #225846;
+  border-radius: 5px;
+  padding: 4px 6px;
+}
+.benchmark-ineligible {
+  color: #fbbf24;
+}
+.benchmark-lane {
+  display: grid;
+  grid-template-columns: 105px minmax(0, 1fr) 90px;
+  gap: 8px;
+  align-items: center;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+.benchmark-lane.is-winner {
+  border-color: #225846;
+  background: #12302977;
+}
+.benchmark-lane-name {
+  font-size: 9px;
+}
+.benchmark-lane-name b {
+  color: #86efac;
+  font-size: 8px;
+}
+.benchmark-lane-track {
+  height: 16px;
+  background: #0a1423;
+  border-radius: 3px;
+}
+.benchmark-lane-bar {
+  height: 100%;
+  border-radius: 3px;
+}
+.benchmark-lane-bar.minimum-width {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    #ffffff66 2px,
+    #ffffff66 3px
+  );
+}
+.benchmark-lane-value {
+  font-size: 10px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.benchmark-lane-reason {
+  grid-column: 1/-1;
+  font-size: 9px;
+  color: #fbbf24;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .benchmark-lane {
+    grid-template-columns: 85px minmax(0, 1fr) 78px;
+    gap: 5px;
+    padding: 5px;
+  }
+  .benchmark-lane-value {
+    font-size: 9px;
+  }
+}
+.query-catalog {
+  max-height: 360px;
+  overflow: auto;
+  scrollbar-width: thin;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-right: 4px;
+}
+.query-catalog h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #9aabc2;
+  margin: 0 0 7px;
+}
+.query-catalog h3 .icon {
+  width: 14px;
+  height: 14px;
+}
+.query-option {
+  padding: 10px;
+  border: 1px solid #334155;
+  border-radius: 9px;
+  margin-bottom: 7px;
+  background: #0e192b;
+  min-width: 0;
+}
+.query-option.is-selected {
+  border-color: #456fa5;
+  background: #152942;
+}
+.query-option-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+}
+.query-option-title b {
+  font-size: 9px;
+  color: #93c5fd;
+  flex-shrink: 0;
+}
+.query-option p {
+  font-size: 10px;
+  line-height: 1.5;
+  color: #9aabc2;
+  margin: 6px 0;
+}
+.query-option-tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.query-option-tags span {
+  font-size: 9px;
+  padding: 3px 5px;
+  background: #243449;
+  border-radius: 4px;
+  color: #b6c4d8;
+}
+.query-option details {
+  margin-top: 7px;
+  font-size: 10px;
+  color: #c5d3e5;
+}
+.query-option summary {
+  cursor: pointer;
+}
+.benchmark-chart {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.benchmark-chart-key {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 10px;
+}
+.benchmark-chart-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.benchmark-chart-key i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.benchmark-chart > .helper {
+  font-size: 10px;
+  margin: 8px 0;
+}
+.benchmark-chart-rows {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  padding-right: 8px;
+}
+.benchmark-chart-row {
+  padding: 9px 0;
+  border-top: 1px solid #26344b;
+}
+.benchmark-chart-label {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 10px;
+  margin-bottom: 7px;
+}
+.benchmark-chart-label b {
+  color: #e2e8f0;
+}
+.benchmark-chart-label span {
+  color: #9aabc2;
+}
+.benchmark-bar-track {
+  position: relative;
+  height: 28px;
+  background: #0a1423;
+  border-radius: 4px;
+}
+.benchmark-front-bar {
+  position: absolute;
+  left: 0;
+  height: 16px;
+  min-width: 2px;
+  border-radius: 3px;
+}
+.benchmark-bar-values {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 9px;
+  margin-top: 5px;
+}
 .vehicle-map-marker {
   background: transparent;
   border: 0;

@@ -1,6 +1,6 @@
 export const INPUT_HELP = {
   vehicles:
-    "Number of active vehicles sampled per tick. More vehicles create more rows and database load. Per-row mode allows at most 50. The slider and number field control the same count.",
+    "Number of active vehicles sampled per tick. More vehicles create more rows and database load. If there are not enough active vehicles, Start asks for confirmation before creating the missing vehicles. Per-row mode allows at most 50. The slider and number field control the same count.",
   interval:
     "Seconds between scheduled ticks, and the movement time step for each sample. Smaller values write more often. Burst runs continuously, so this field is disabled and ignored.",
   maxRows:

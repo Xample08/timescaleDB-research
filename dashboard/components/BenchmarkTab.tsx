@@ -1,5 +1,11 @@
 "use client";
-import { NumberField } from "./FormControls";
+import {
+  aggregateMeasurements,
+  BenchmarkResult,
+} from "@/lib/benchmark-results";
+import { Icon } from "./Icon";
+import { BenchmarkChart } from "./BenchmarkChart";
+import { Checkbox, NumberField } from "./FormControls";
 import { ResizablePanels } from "./ResizablePanels";
 import { DEFAULT_LAYOUT } from "@/lib/layout";
 import { useSqlFetch } from "./SqlExecution";
@@ -9,39 +15,17 @@ import {
   Field,
   Button,
   Badge,
-  SERIES_COLORS,
   ErrorState,
   Spinner,
   EmptyState,
 } from "./ui";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
+
 import { formatMs, formatInt } from "@/lib/format";
-import { CATALOG, percentile } from "@/lib/bench";
+import { CATALOG, QUERY_GUIDES } from "@/lib/bench";
 
 type RunState = "idle" | "running" | "done";
 
-type AggregatedResult = {
-  queryId: string;
-  variant: string;
-  medianMs: number;
-  p95Ms: number;
-  minMs: number;
-  maxMs: number;
-  rowsReturned: number;
-  sharedHit: number;
-  sharedRead: number;
-  chunksScanned: number | null;
-  valid: boolean;
-};
+type AggregatedResult = BenchmarkResult;
 
 type RunHistory = {
   id: string;
@@ -205,34 +189,7 @@ export function BenchmarkTab() {
         const reps = resultsRaw[q.id];
         if (!reps || reps.length === 0) continue;
 
-        let valid = true;
-        const lastRep = reps[reps.length - 1];
-        if (lastRep.length > 1) {
-          const firstRows = lastRep[0].rowsReturned;
-          if (lastRep.some((r: any) => r.rowsReturned !== firstRows))
-            valid = false;
-        }
-
-        for (const v of q.variants) {
-          const vMs = reps.map(
-            (r) => r.find((x: any) => x.variant === v)?.executionMs || 0,
-          );
-          const vLast = lastRep.find((x: any) => x.variant === v) || {};
-
-          aggregated.push({
-            queryId: q.id,
-            variant: v,
-            medianMs: percentile(vMs, 50),
-            p95Ms: percentile(vMs, 95),
-            minMs: Math.min(...vMs),
-            maxMs: Math.max(...vMs),
-            rowsReturned: vLast.rowsReturned || 0,
-            sharedHit: vLast.sharedHit || 0,
-            sharedRead: vLast.sharedRead || 0,
-            chunksScanned: vLast.chunksScanned ?? null,
-            valid,
-          });
-        }
+        aggregated.push(...aggregateMeasurements(q.id, q.variants, reps));
       }
 
       const runData: RunHistory = {
@@ -313,10 +270,19 @@ export function BenchmarkTab() {
   if (currentRun) {
     const qIds = Array.from(new Set(currentRun.results.map((r) => r.queryId)));
     for (const q of qIds) {
-      const obj: any = { name: q };
+      const obj: any = { name: q, eligible: {}, reasons: {} };
       const qRes = currentRun.results.filter((r) => r.queryId === q);
       for (const r of qRes) {
         obj[r.variant] = r.medianMs;
+        obj.eligible[r.variant] =
+          r.valid && r.rowsReturned > 0 && r.medianMs != null && r.medianMs > 0;
+        obj.reasons[r.variant] =
+          r.reason ||
+          (!r.valid
+            ? "Invalid comparison"
+            : r.rowsReturned === 0
+              ? "No matching rows"
+              : "");
       }
       chartData.push(obj);
     }
@@ -354,6 +320,11 @@ export function BenchmarkTab() {
       initialSizes={DEFAULT_LAYOUT.tab}
     >
       <Card title="Controls" className="xl:sticky xl:top-4 xl:self-start">
+        <p className="helper">
+          Warm-cache server execution benchmark. Both databases use the same
+          time window; query order alternates. Network transfer is excluded.
+          Similar indexed-query timings are expected on small datasets.
+        </p>
         <Field label="Set">
           <select
             disabled={state === "running"}
@@ -369,28 +340,74 @@ export function BenchmarkTab() {
         <div className="text-xs font-medium text-slate-700 dark:text-slate-300 mt-3 mb-1">
           Queries
         </div>
-        <div className="space-y-1 max-h-48 overflow-y-auto border border-slate-200 rounded p-2 dark:border-slate-800">
-          {CATALOG.map((q) => (
-            <label
-              key={q.id}
-              className="flex items-center gap-2 text-sm cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                disabled={state === "running"}
-                checked={!!selectedQueries[q.id]}
-                onChange={(e) =>
-                  setSelectedQueries({
-                    ...selectedQueries,
-                    [q.id]: e.target.checked,
-                  })
-                }
-              />
-              <span>
-                {q.id}: {q.title}
-              </span>
-            </label>
-          ))}
+        <div className="query-catalog">
+          {[...new Set(CATALOG.map((q) => QUERY_GUIDES[q.id].category))].map(
+            (category) => (
+              <section key={category}>
+                <h3>
+                  <Icon
+                    name={
+                      category === "Rule reporting"
+                        ? "warning"
+                        : category === "Routes"
+                          ? "clock"
+                          : category === "Location filters"
+                            ? "simulator"
+                            : category === "Data quality"
+                              ? "settings"
+                              : "chart"
+                    }
+                  />
+                  {category}
+                </h3>
+                {CATALOG.filter(
+                  (q) => QUERY_GUIDES[q.id].category === category,
+                ).map((q) => {
+                  const guide = QUERY_GUIDES[q.id];
+                  return (
+                    <div
+                      key={q.id}
+                      className={`query-option ${selectedQueries[q.id] ? "is-selected" : ""}`}
+                    >
+                      <Checkbox
+                        checked={!!selectedQueries[q.id]}
+                        disabled={state === "running"}
+                        onChange={(checked) =>
+                          setSelectedQueries((previous) => ({
+                            ...previous,
+                            [q.id]: checked,
+                          }))
+                        }
+                      >
+                        <span className="query-option-title">
+                          <b>{q.id}</b>
+                          {q.title}
+                        </span>
+                      </Checkbox>
+                      <p>{guide.description}</p>
+                      <div className="query-option-tags">
+                        <span>{guide.window}</span>
+                        <span>
+                          {q.variants.includes("ts_cagg")
+                            ? "PG / TS / CAGG"
+                            : "PG / TS"}
+                        </span>
+                      </div>
+                      <details>
+                        <summary>What this tests</summary>
+                        <p>
+                          <b>Tests:</b> {guide.tests}
+                        </p>
+                        <p>
+                          <b>Returns:</b> {guide.output}
+                        </p>
+                      </details>
+                    </div>
+                  );
+                })}
+              </section>
+            ),
+          )}
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-3">
@@ -479,50 +496,7 @@ export function BenchmarkTab() {
               }
               className="h-80"
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#29364b"
-                  />
-                  <XAxis dataKey="name" style={{ fontSize: 11 }} />
-                  <YAxis
-                    scale={logScale ? "log" : "auto"}
-                    domain={logScale ? ["auto", "auto"] : [0, "auto"]}
-                    tickFormatter={(v) => formatMs(v)}
-                    style={{ fontSize: 11 }}
-                    width={60}
-                    allowDataOverflow={true}
-                  />
-                  <Tooltip
-                    formatter={(val: any) => formatMs(val)}
-                    labelStyle={{ color: "#0f172a" }}
-                  />
-                  <Legend verticalAlign="top" height={36} />
-                  <Bar
-                    dataKey="pg"
-                    name="PostgreSQL"
-                    fill={SERIES_COLORS.pg}
-                    isAnimationActive={false}
-                  />
-                  <Bar
-                    dataKey="ts"
-                    name="TimescaleDB"
-                    fill={SERIES_COLORS.ts}
-                    isAnimationActive={false}
-                  />
-                  <Bar
-                    dataKey="ts_cagg"
-                    name="Timescale (CAGG)"
-                    fill={SERIES_COLORS.ts_cagg}
-                    isAnimationActive={false}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              <BenchmarkChart data={chartData} logScale={logScale} />
             </Card>
 
             <Card
@@ -572,6 +546,10 @@ export function BenchmarkTab() {
                       const ratio =
                         r.variant.startsWith("ts") &&
                         pgRes &&
+                        pgRes.valid &&
+                        r.valid &&
+                        pgRes.medianMs != null &&
+                        r.medianMs != null &&
                         pgRes.medianMs > 0
                           ? (r.medianMs / pgRes.medianMs).toFixed(2)
                           : "—";
@@ -621,7 +599,9 @@ export function BenchmarkTab() {
                             {r.valid ? (
                               <Badge tone="ok">Valid</Badge>
                             ) : (
-                              <Badge tone="error">Row count mismatch</Badge>
+                              <Badge tone="error">
+                                {r.reason || "Invalid comparison"}
+                              </Badge>
                             )}
                           </td>
                           <td className="py-2 text-center">
