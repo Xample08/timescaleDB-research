@@ -18,9 +18,8 @@ export function validateBulkInput(
   days: unknown,
 ) {
   return (
-    Number.isInteger(total) &&
+    Number.isSafeInteger(total) &&
     Number(total) >= 1 &&
-    Number(total) <= 100000000 &&
     Number.isInteger(vehicles) &&
     Number(vehicles) >= 1 &&
     Number(vehicles) <= 1000 &&

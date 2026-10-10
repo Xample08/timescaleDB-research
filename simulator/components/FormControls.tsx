@@ -20,7 +20,7 @@ export function NumberField({
   help?: string;
   value: number;
   min: number;
-  max: number;
+  max?: number;
   disabled?: boolean;
   error?: string;
   onChange: (value: number) => void;
@@ -28,7 +28,7 @@ export function NumberField({
   const step = (direction: number) =>
     onChange(
       Math.min(
-        max,
+        max ?? Infinity,
         Math.max(
           min,
           (Number.isFinite(value) ? value : min - (direction > 0 ? 1 : 0)) +
@@ -62,7 +62,7 @@ export function NumberField({
           <button
             type="button"
             tabIndex={-1}
-            disabled={disabled || value >= max}
+            disabled={disabled || (max !== undefined && value >= max)}
             aria-label={`Increase ${label}`}
             onClick={() => step(1)}
           >

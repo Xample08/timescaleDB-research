@@ -284,11 +284,10 @@ export default function BulkPage() {
             label="Rows per table"
             placeholder="e.g. 100000"
             min={1}
-            max={100000000}
             value={total}
             onChange={setTotal}
             disabled={busy || !!saved}
-            help="Adds exactly this many new rows to each table, for twice as many records overall. Existing telemetry is preserved. Maximum 100 million rows per table."
+            help="Adds exactly this many new rows to each table, for twice as many records overall. Existing telemetry is preserved. There is no configured row limit."
           />
           <NumberField
             id="bulk-vehicles"

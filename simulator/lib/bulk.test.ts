@@ -27,8 +27,13 @@ test("resumed batches continue the same dataset and end at the fixed reference t
 });
 test("rejects empty, fractional and out-of-range settings", () => {
   expect(validateBulkInput(1, 1, 1)).toBe(true);
-  for (const total of [NaN, 0, 1.5, 100000001, "10"])
+  for (const total of [NaN, 0, 1.5, Infinity, "10"])
     expect(validateBulkInput(total, 20, 14)).toBe(false);
   expect(validateBulkInput(100, 0, 14)).toBe(false);
   expect(validateBulkInput(100, 20, 366)).toBe(false);
+});
+
+test("accepts the requested 898532677 rows without a configured cap", () => {
+  expect(validateBulkInput(898532677, 20, 14)).toBe(true);
+  expect(validateBulkInput(100000001, 1, 1)).toBe(true);
 });
