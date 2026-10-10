@@ -4,6 +4,7 @@ import Link from "next/link";
 import { NumberField } from "@/components/FormControls";
 import { Icon } from "@/components/Icon";
 import { BulkJob, validateBulkInput } from "@/lib/bulk";
+import { BatchTiming, estimateBulkEta, etaDuration } from "@/lib/bulk-eta";
 const storageKey = "telemetry-bulk-job:v1";
 type Saved = { id: string; total: number; vehicles: number; days: number };
 type Phase =
@@ -28,6 +29,14 @@ export default function BulkPage() {
     { time: string; text: string; tone: string }[]
   >([]);
   const control = useRef({ pause: false, active: false, alive: true });
+  const [timings, setTimings] = useState<BatchTiming[]>([]);
+  const [lastCommitAt, setLastCommitAt] = useState(0);
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    if (phase !== "running" && phase !== "pausing") return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [phase]);
   const terminal = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const log = (text: string, tone = "info") =>
@@ -125,6 +134,8 @@ export default function BulkPage() {
   };
   const process = async (record: Saved, initial: BulkJob) => {
     let current = initial;
+    setTimings([]);
+    setLastCommitAt(0);
     setJob(current);
     while (
       current.status === "running" &&
@@ -135,8 +146,20 @@ export default function BulkPage() {
       log(
         `Generating the next batch after row ${current.processed.toLocaleString("en-US")}; inserting identical data into PostgreSQL and TimescaleDB...`,
       );
+      const before = current.processed;
+      const started = performance.now();
       current = await api("step", record);
       if (!control.current.alive) return;
+      if (current.processed > before) {
+        const timing = {
+          rows: current.processed - before,
+          milliseconds: performance.now() - started,
+        };
+        setTimings((previous) => [...previous, timing].slice(-10));
+        const committed = Date.now();
+        setLastCommitAt(committed);
+        setNow(committed);
+      }
       setJob(current);
       log(
         `COMMIT confirmed / ${current.processed.toLocaleString("en-US")} of ${current.total.toLocaleString("en-US")} rows saved in EACH table. Checkpoint persisted.`,
@@ -169,6 +192,8 @@ export default function BulkPage() {
     control.current.active = true;
     control.current.pause = false;
     setError("");
+    setTimings([]);
+    setLastCommitAt(0);
     let record = saved;
     try {
       if (!resume || !record) {
@@ -206,6 +231,8 @@ export default function BulkPage() {
     control.current.active = true;
     setPhase("recovering");
     setError("");
+    setTimings([]);
+    setLastCommitAt(0);
     try {
       let current = await api("load", saved);
       if (current.status === "running") current = await api("pause", saved);
@@ -228,6 +255,32 @@ export default function BulkPage() {
     Number.isFinite(target) && target > 0
       ? Math.min(100, (processed / target) * 100)
       : 0;
+  const eta = estimateBulkEta(timings, Math.max(0, target - processed));
+  const measuring = phase === "running" || phase === "pausing";
+  const stalled =
+    measuring &&
+    eta &&
+    now - lastCommitAt > Math.max(5000, eta.averageBatchMs * 3);
+  const finishAt = eta && lastCommitAt ? lastCommitAt + eta.remainingMs : null;
+  const timeLeft = eta
+    ? Math.max(eta.averageBatchMs, (finishAt || now) - now)
+    : 0;
+  const etaText =
+    phase === "completed"
+      ? "Complete"
+      : phase === "paused"
+        ? "Paused"
+        : phase === "error"
+          ? "Resume to estimate"
+          : phase === "pausing"
+            ? "Pausing safely..."
+            : stalled
+              ? "Waiting for batch..."
+              : measuring && eta
+                ? `About ${etaDuration(timeLeft)}`
+                : measuring || phase === "creating" || phase === "recovering"
+                  ? "Calculating..."
+                  : "Starts after first batch";
   const stage =
     phase === "running"
       ? "Generating and writing the next atomic batch"
@@ -359,6 +412,8 @@ export default function BulkPage() {
                 localStorage.removeItem(storageKey);
                 setSaved(null);
                 setJob(null);
+                setTimings([]);
+                setLastCommitAt(0);
                 setPhase("idle");
                 setError("");
                 setLogs([]);
@@ -410,6 +465,46 @@ export default function BulkPage() {
                 <Icon name="bolt" />
                 TimescaleDB <b>{processed.toLocaleString("en-US")}</b>
               </span>
+            </div>
+            <div className="bulk-eta" aria-label="Estimated completion">
+              <div>
+                <span>
+                  <Icon name="clock" />
+                  Time remaining
+                </span>
+                <strong>{etaText}</strong>
+                <small>
+                  {eta?.early && measuring
+                    ? "Early estimate / improves after a few batches"
+                    : "Based on the latest 10 committed batches"}
+                </small>
+              </div>
+              <div>
+                <span>Loading rate / per table</span>
+                <strong>
+                  {eta
+                    ? `${Math.round(eta.rowsPerSecond).toLocaleString("en-US")} rows/s`
+                    : "Measuring..."}
+                </strong>
+                <small>Includes writing both tables and network time</small>
+              </div>
+              <div>
+                <span>Estimated finish</span>
+                <strong>
+                  {phase === "running" &&
+                  !stalled &&
+                  finishAt &&
+                  Number.isFinite(finishAt) &&
+                  Math.abs(finishAt) < 8640000000000000
+                    ? `${new Date(finishAt).toLocaleString("en-GB", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })} WIB`
+                    : phase === "completed"
+                      ? "Finished"
+                      : phase === "paused" || phase === "pausing"
+                        ? "Updates on Continue"
+                        : "Awaiting estimate"}
+                </strong>
+                <small>May change with database load</small>
+              </div>
             </div>
             {busy && (
               <button

@@ -1,5 +1,44 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+.bulk-eta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #28364b;
+}
+.bulk-eta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.bulk-eta span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #9aabc2;
+}
+.bulk-eta strong {
+  font-size: 14px;
+  color: #c5d3e5;
+  overflow-wrap: anywhere;
+}
+.bulk-eta small {
+  font-size: 9px;
+  line-height: 1.5;
+  color: #718198;
+}
+@media (max-width: 600px) {
+  .bulk-eta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bulk-eta > div {
+    padding: 5px 0;
+  }
+}
 .bulk-shell {
   max-width: 1400px;
 }
