@@ -1,8 +1,16 @@
 "use client";
 import { useSqlFetch } from "./SqlExecution";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Icon } from "./Icon";
 import { StatCard, Spinner } from "./ui";
 import { formatInt, formatDuration } from "@/lib/format";
+
+interface ExactCounts {
+  pg: number;
+  ts: number;
+  countedAt: string;
+}
+const exactCacheKey = "telemetry-exact-counts:v1";
 
 export function StatusStrip() {
   const sqlFetch = useSqlFetch("Status");
@@ -10,22 +18,35 @@ export function StatusStrip() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  // Exact row count mode (count(*) vs approximate_row_count)
+  // Exact counts are a manually refreshed snapshot, independent of live status.
   const [exactMode, setExactMode] = useState(false);
   const [loadingExact, setLoadingExact] = useState(false);
-  const [refreshCount, setRefreshCount] = useState(0);
+  const [exactCounts, setExactCounts] = useState<ExactCounts | null>(null);
+  const [exactError, setExactError] = useState<string | null>(null);
+  const exactRequest = useRef<AbortController | null>(null);
 
-  // Poll status periodically (5s for estimated, 20s for exact to avoid DB overhead)
+  useEffect(() => {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(exactCacheKey) || "null");
+      if (cached && Number.isSafeInteger(cached.pg) && cached.pg >= 0 &&
+          Number.isSafeInteger(cached.ts) && cached.ts >= 0 &&
+          Number.isFinite(Date.parse(cached.countedAt))) setExactCounts(cached);
+    } catch { /* Storage may be unavailable; manual counting still works. */ }
+    return () => { exactRequest.current?.abort(); };
+  }, []);
+
+  // Poll only inexpensive estimated status. Never recount on a timer or visibility change.
   useEffect(() => {
     let mounted = true;
     let timer: any;
+    let fetching = false;
+    const controller = new AbortController();
 
     const doFetch = async () => {
-      if (!mounted || document.hidden) return;
-      if (exactMode) setLoadingExact(true);
+      if (!mounted || document.hidden || fetching) return;
+      fetching = true;
       try {
-        const url = exactMode ? "/api/status?exact=true" : "/api/status";
-        const res = await sqlFetch(url);
+        const res = await sqlFetch("/api/status", { signal: controller.signal });
         const json = await res.json();
         if (!mounted) return;
         if (res.ok) {
@@ -39,13 +60,12 @@ export function StatusStrip() {
         if (!mounted) return;
         setError(err.message);
       } finally {
-        if (mounted && exactMode) setLoadingExact(false);
+        fetching = false;
       }
     };
 
     doFetch();
-    const intervalMs = exactMode ? 20000 : 5000;
-    timer = setInterval(doFetch, intervalMs);
+    timer = setInterval(doFetch, 5000);
 
     const onVis = () => {
       if (!document.hidden && mounted) {
@@ -56,18 +76,38 @@ export function StatusStrip() {
 
     return () => {
       mounted = false;
+      controller.abort();
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [exactMode, refreshCount]);
+  }, [sqlFetch]);
 
   const handleToggleExact = (enable: boolean) => {
     if (enable === exactMode) return;
     setExactMode(enable);
   };
 
-  const handleRecount = () => {
-    setRefreshCount((prev) => prev + 1);
+  const handleRecount = async () => {
+    if (exactRequest.current) return;
+    const controller = new AbortController();
+    exactRequest.current = controller;
+    setLoadingExact(true);
+    setExactError(null);
+    try {
+      const res = await sqlFetch("/api/status?exact=true", { signal: controller.signal });
+      const json = await res.json();
+      if (controller.signal.aborted) return;
+      if (!res.ok) throw new Error(json.error || "Unable to refresh exact count");
+      const snapshot = { pg: json.approxRows.pg, ts: json.approxRows.ts, countedAt: new Date().toISOString() };
+      setExactCounts(snapshot);
+      try { sessionStorage.setItem(exactCacheKey, JSON.stringify(snapshot)); } catch { /* Optional cache. */ }
+    } catch (err) {
+      if (!controller.signal.aborted)
+        setExactError(err instanceof Error ? err.message : "Unable to refresh exact count");
+    } finally {
+      if (!controller.signal.aborted) setLoadingExact(false);
+      exactRequest.current = null;
+    }
   };
 
   if (!data && !error) {
@@ -80,7 +120,12 @@ export function StatusStrip() {
 
   const chunksCompressed = data?.chunks?.compressed || 0;
   const chunksTotal = data?.chunks?.total || 0;
-  const isExactData = !!data?.approxRows?.isExact;
+  const rowCounts = exactMode ? exactCounts : data?.approxRows;
+  const countHint = exactMode
+    ? exactCounts
+      ? `Exact snapshot / ${new Date(exactCounts.countedAt).toLocaleString("en-GB", { timeZone: "Asia/Jakarta", hour12: false })} WIB`
+      : "Click Refresh exact count to calculate"
+    : "Estimated (approx)";
 
   return (
     <div className="mb-4">
@@ -137,9 +182,6 @@ export function StatusStrip() {
               }`}
             >
               <span>Exact count(*)</span>
-              {exactMode && (
-                <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
-              )}
             </button>
           </div>
 
@@ -151,14 +193,17 @@ export function StatusStrip() {
               title="Recalculate exact row count via count(*)"
               className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50"
             >
-              <span className={`text-xs ${loadingExact ? "animate-spin" : ""}`}>
-                ↻
-              </span>
-              <span>Recount</span>
+              <Icon name="refresh" className={loadingExact ? "animate-spin" : ""} />
+              <span>{loadingExact ? "Refreshing..." : "Refresh exact count"}</span>
             </button>
           )}
         </div>
       </div>
+      {exactMode && (
+        <p className={`mb-2 text-xs ${exactError ? "text-red-400" : "text-slate-400"}`} role={exactError ? "alert" : undefined}>
+          {exactError ? `Refresh failed: ${exactError}. Previous counts are kept.` : "Exact counts update only when you press Refresh exact count. Other status metrics stay live."}
+        </p>
+      )}
 
       {/* Metric Cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
@@ -169,45 +214,37 @@ export function StatusStrip() {
         <StatCard
           label="Rows (PostgreSQL)"
           value={
-            loadingExact ? (
+            loadingExact && !rowCounts ? (
               <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent dark:border-blue-400" />
                 <span className="text-lg">Counting...</span>
               </span>
-            ) : data ? (
-              formatInt(data.approxRows.pg)
+            ) : rowCounts ? (
+              formatInt(rowCounts.pg)
             ) : (
-              "—"
+              "Not counted"
             )
           }
           hint={
-            loadingExact
-              ? "Calculating count(*)..."
-              : isExactData
-                ? "Exact count(*)"
-                : "Estimated (approx)"
+            loadingExact ? "Refreshing exact snapshot..." : countHint
           }
         />
         <StatCard
           label="Rows (TimescaleDB)"
           value={
-            loadingExact ? (
+            loadingExact && !rowCounts ? (
               <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent dark:border-blue-400" />
                 <span className="text-lg">Counting...</span>
               </span>
-            ) : data ? (
-              formatInt(data.approxRows.ts)
+            ) : rowCounts ? (
+              formatInt(rowCounts.ts)
             ) : (
-              "—"
+              "Not counted"
             )
           }
           hint={
-            loadingExact
-              ? "Calculating count(*)..."
-              : isExactData
-                ? "Exact count(*)"
-                : "Estimated (approx)"
+            loadingExact ? "Refreshing exact snapshot..." : countHint
           }
         />
         <StatCard

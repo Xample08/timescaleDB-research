@@ -69,6 +69,8 @@ The dashboard uses the simulator's dark design: PostgreSQL is blue, TimescaleDB 
 
 The SQL execution panel stays visible on the right. It keeps session history, displays bound values, elapsed query time and returned-row counts, and highlights the current or latest database query. PostgreSQL and TimescaleDB histories are stacked; shared transaction/setup statements remain available under **Shared / session SQL**. By default the panel shows the active tab's operations; enable **Include other tabs and background status** to inspect every captured request. History is cleared by a page reload. Ordinary API clients still receive JSON unless they request the NDJSON stream.
 
+Dashboard status uses estimated row counts on its five-second refresh. **Exact count(*)** displays a snapshot: press **Refresh exact count** to calculate or update it. Exact counts never run automatically when switching modes, returning to the tab, or refreshing the page. The last successful snapshot is cached in the browser tab's session with its count timestamp; other status metrics continue updating. Failed refreshes preserve the previous exact count.
+
 
 ### Dashboard warning reports
 
