@@ -201,7 +201,7 @@ export function StatusStrip() {
       </div>
       {exactMode && (
         <p className={`mb-2 text-xs ${exactError ? "text-red-400" : "text-slate-400"}`} role={exactError ? "alert" : undefined}>
-          {exactError ? `Refresh failed: ${exactError}. Previous counts are kept.` : "Exact counts update only when you press Refresh exact count. Other status metrics stay live."}
+          {exactError ? `Refresh failed: ${exactError}. Previous counts are kept.` : "Exact counts update only when you press Refresh exact count. Large datasets may take several minutes. Other status metrics stay live."}
         </p>
       )}
 

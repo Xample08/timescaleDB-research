@@ -20,6 +20,7 @@ Create `.env.local` in `simulator/` and `dashboard/` based on their respective `
 - `SIM_PASSWORD`: (simulator) Secret password required for API endpoints.
 - `DB_SSL_VERIFY`: (both, optional) Set to `true` to verify SSL certificates (default `false`).
 - `BENCH_TIMEOUT_MS`: (dashboard, optional) Per-query timeout in ms (default `15000`).
+- `EXACT_COUNT_TIMEOUT_MS`: (dashboard, optional) Timeout for manually counting both telemetry tables in one statement (default `1800000`, thirty minutes). Restart the dashboard after changing environment settings. Exact counts use this timeout only during the count; benchmark and live-status queries retain their existing timeout. The status route advertises a 1,950-second maximum to hosting platforms; longer count settings also require adjusting that route duration and the host's request limits. Local Next.js does not enforce this route metadata as a timer.
 
 ## How to Run Both Projects
 Run both projects in separate terminals:

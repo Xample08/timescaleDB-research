@@ -1,10 +1,17 @@
 import { withSqlStream } from "@/lib/sql-trace";
 import { NextResponse } from "next/server";
-import { withReadOnlyClient } from "@/lib/db";
+import { BENCH_TIMEOUT_MS, withReadOnlyClient } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 1950;
+
+function exactCountTimeout() {
+  const value = Number(process.env.EXACT_COUNT_TIMEOUT_MS || 1800000);
+  return Number.isInteger(value) && value > 0 && value <= 2147483647
+    ? value
+    : 1800000;
+}
 
 async function runGET(req: Request) {
   try {
@@ -23,12 +30,15 @@ async function runGET(req: Request) {
       let rowTsCount: any;
 
       if (isExact) {
-        rowPgCount = await client.query(
-          "SELECT count(*) AS count FROM telemetry_pg",
+        // One statement gives both counts the same snapshot and one timeout budget.
+        await client.query(`SET LOCAL statement_timeout = ${exactCountTimeout()}`);
+        const counts = await client.query(
+          `SELECT (SELECT count(*) FROM telemetry_pg) AS pg,
+                  (SELECT count(*) FROM telemetry_ts) AS ts`,
         );
-        rowTsCount = await client.query(
-          "SELECT count(*) AS count FROM telemetry_ts",
-        );
+        rowPgCount = { rows: [{ count: counts.rows[0]?.pg }] };
+        rowTsCount = { rows: [{ count: counts.rows[0]?.ts }] };
+        await client.query(`SET LOCAL statement_timeout = ${BENCH_TIMEOUT_MS}`);
       } else {
         rowPgCount = await client.query(
           "SELECT approximate_row_count('telemetry_pg') AS count",
