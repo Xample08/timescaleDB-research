@@ -319,7 +319,40 @@ export function BenchmarkTab() {
       label="BenchmarkTab columns"
       initialSizes={DEFAULT_LAYOUT.tab}
     >
-      <Card title="Controls" className="xl:sticky xl:top-4 xl:self-start">
+      <Card
+        title="Controls"
+        className="benchmark-controls-card h-full"
+        bodyClassName="benchmark-controls-body"
+        footer={
+          <div className="space-y-2">
+            {formError && <ErrorState message={formError} />}
+            {state !== "running" ? (
+              <Button
+                variant="primary"
+                className="w-full"
+                onClick={runBenchmark}
+                disabled={
+                  Object.values(selectedQueries).every((v) => !v) ||
+                  repetitions < 1 ||
+                  repetitions > 20 ||
+                  warmup < 0 ||
+                  warmup > 3
+                }
+              >
+                Run Benchmark
+              </Button>
+            ) : (
+              <Button
+                variant="danger"
+                className="w-full"
+                onClick={() => cancelFn && cancelFn()}
+              >
+                Cancel ({progress.done} / {progress.total})
+              </Button>
+            )}
+          </div>
+        }
+      >
         <p className="helper">
           Warm-cache server execution benchmark. Both databases use the same
           time window; query order alternates. Network transfer is excluded.
@@ -448,34 +481,6 @@ export function BenchmarkTab() {
               setVehicleId(Number.isNaN(value) ? "" : String(value))
             }
           />
-        </div>
-        {formError && <ErrorState message={formError} />}
-
-        <div className="mt-4">
-          {state !== "running" ? (
-            <Button
-              variant="primary"
-              className="w-full"
-              onClick={runBenchmark}
-              disabled={
-                Object.values(selectedQueries).every((v) => !v) ||
-                repetitions < 1 ||
-                repetitions > 20 ||
-                warmup < 0 ||
-                warmup > 3
-              }
-            >
-              Run Benchmark
-            </Button>
-          ) : (
-            <Button
-              variant="danger"
-              className="w-full"
-              onClick={() => cancelFn && cancelFn()}
-            >
-              Cancel ({progress.done} / {progress.total})
-            </Button>
-          )}
         </div>
       </Card>
 

@@ -73,12 +73,16 @@ export function AppHeader({
 export function Card({
   title,
   right,
+  footer,
   className = "",
+  bodyClassName = "",
   children,
 }: {
   title?: string;
   right?: React.ReactNode;
+  footer?: React.ReactNode;
   className?: string;
+  bodyClassName?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -86,12 +90,17 @@ export function Card({
       className={`dashboard-card flex min-h-0 min-w-0 flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 ${className}`}
     >
       {(title || right) && (
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex shrink-0 items-center justify-between">
           {title && <h2 className="text-sm font-semibold">{title}</h2>}
           {right && <div>{right}</div>}
         </div>
       )}
-      <div className="flex-1 space-y-3">{children}</div>
+      <div className={`flex-1 min-h-0 space-y-3 ${bodyClassName}`}>{children}</div>
+      {footer && (
+        <div className="mt-3 shrink-0 pt-3 border-t border-slate-100 dark:border-slate-800">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }
