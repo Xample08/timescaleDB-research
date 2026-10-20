@@ -26,24 +26,45 @@ async function runGET() {
       // TS compression stats
       let beforeCompressionBytes = null;
       let afterCompressionBytes = null;
+      let beforeTableBytes = null;
+      let beforeIndexBytes = null;
+      let afterTableBytes = null;
+      let afterIndexBytes = null;
       let compressionRatio = null;
       try {
         const tsComp = await client.query(`
-          SELECT before_compression_total_bytes, after_compression_total_bytes
+          SELECT *
           FROM hypertable_compression_stats('telemetry_ts')
         `);
         if (tsComp.rows.length > 0) {
+          const r = tsComp.rows[0];
           const before = parseInt(
-            tsComp.rows[0].before_compression_total_bytes || "0",
+            r.before_compression_total_bytes || "0",
             10,
           );
           const after = parseInt(
-            tsComp.rows[0].after_compression_total_bytes || "0",
+            r.after_compression_total_bytes || "0",
             10,
           );
           if (before > 0 && after > 0) {
             beforeCompressionBytes = before;
             afterCompressionBytes = after;
+            beforeTableBytes =
+              r.before_compression_table_bytes != null
+                ? parseInt(r.before_compression_table_bytes || "0", 10)
+                : null;
+            beforeIndexBytes =
+              r.before_compression_index_bytes != null
+                ? parseInt(r.before_compression_index_bytes || "0", 10)
+                : null;
+            afterTableBytes =
+              r.after_compression_table_bytes != null
+                ? parseInt(r.after_compression_table_bytes || "0", 10)
+                : null;
+            afterIndexBytes =
+              r.after_compression_index_bytes != null
+                ? parseInt(r.after_compression_index_bytes || "0", 10)
+                : null;
             compressionRatio = before / after;
           }
         }
@@ -92,6 +113,10 @@ async function runGET() {
           toastBytes: parseInt(tsSizes.rows[0]?.toast_bytes || "0", 10),
           beforeCompressionBytes,
           afterCompressionBytes,
+          beforeTableBytes,
+          beforeIndexBytes,
+          afterTableBytes,
+          afterIndexBytes,
           compressionRatio,
         },
         chunks,
