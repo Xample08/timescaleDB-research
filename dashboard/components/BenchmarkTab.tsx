@@ -69,6 +69,20 @@ export function BenchmarkTab() {
   const [compareA, setCompareA] = useState<string>("");
   const [compareB, setCompareB] = useState<string>("");
 
+  const [caggRefreshing, setCaggRefreshing] = useState(false);
+  const [caggFeedback, setCaggFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!caggFeedback) return;
+    const timer = setTimeout(() => {
+      setCaggFeedback(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [caggFeedback]);
+
   useEffect(() => {
     try {
       const stored = localStorage.getItem("tsdb-dashboard:runs:v1");
@@ -95,6 +109,34 @@ export function BenchmarkTab() {
       if (!compareA) setCompareA(run.id);
       else if (!compareB && parsed.length > 1) setCompareB(parsed[1].id);
     } catch {}
+  };
+
+  const handleRefreshCagg = async () => {
+    if (caggRefreshing) return;
+    setCaggRefreshing(true);
+    setCaggFeedback(null);
+    try {
+      const res = await sqlFetch("/api/cagg/refresh", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(
+          data.error || data.message || "Failed to refresh continuous aggregate",
+        );
+      }
+      setCaggFeedback({
+        type: "success",
+        message: data.message || "Continuous aggregate refreshed successfully",
+      });
+    } catch (err: any) {
+      setCaggFeedback({
+        type: "error",
+        message: err.message || "Failed to refresh continuous aggregate",
+      });
+    } finally {
+      setCaggRefreshing(false);
+    }
   };
 
   const handleSetChange = (val: "quick" | "full") => {
@@ -325,13 +367,53 @@ export function BenchmarkTab() {
         bodyClassName="benchmark-controls-body"
         footer={
           <div className="space-y-2">
+            {caggFeedback && (
+              <div
+                className={`flex items-start justify-between rounded-md p-2 text-xs border transition-all ${
+                  caggFeedback.type === "success"
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30"
+                    : "bg-red-50 text-red-800 border-red-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30"
+                }`}
+                role="status"
+              >
+                <div className="flex items-start gap-1.5 min-w-0 pr-1">
+                  <span className="font-semibold shrink-0 mt-0.5">
+                    {caggFeedback.type === "success" ? "✓" : "⚠"}
+                  </span>
+                  <span className="break-words leading-tight">
+                    {caggFeedback.message}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCaggFeedback(null)}
+                  className="ml-1 text-xs opacity-60 hover:opacity-100 shrink-0 cursor-pointer"
+                  aria-label="Dismiss feedback"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             {formError && <ErrorState message={formError} />}
+            <Button
+              variant="secondary"
+              className="w-full flex items-center justify-center gap-2"
+              onClick={handleRefreshCagg}
+              disabled={caggRefreshing || state === "running"}
+            >
+              <Icon
+                name="refresh"
+                className={`w-4 h-4 shrink-0 ${caggRefreshing ? "animate-spin" : ""}`}
+              />
+              {caggRefreshing ? "Refreshing..." : "Refresh CAGG"}
+            </Button>
             {state !== "running" ? (
               <Button
                 variant="primary"
                 className="w-full"
                 onClick={runBenchmark}
                 disabled={
+                  caggRefreshing ||
                   Object.values(selectedQueries).every((v) => !v) ||
                   repetitions < 1 ||
                   repetitions > 20 ||

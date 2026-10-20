@@ -337,44 +337,29 @@ export function StorageTab() {
               />
               <Tooltip
                 formatter={(val: any) => formatBytes(val)}
-                labelStyle={{ color: "#0f172a" }}
+                contentStyle={{
+                  backgroundColor: "#0f172a",
+                  borderColor: "#334155",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                }}
+                labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
               />
               <Legend verticalAlign="top" height={36} />
               <Bar
                 dataKey="table"
-                name="Table / Total"
+                name="Table Data"
                 fill={SERIES_COLORS.pg}
+                radius={[4, 4, 0, 0]}
                 isAnimationActive={false}
-              >
-                {chartData.map((row) => (
-                  <Cell
-                    key={row.name}
-                    fill={
-                      row.name.startsWith("PostgreSQL")
-                        ? SERIES_COLORS.pg
-                        : SERIES_COLORS.ts
-                    }
-                  />
-                ))}
-              </Bar>
+              />
               <Bar
                 dataKey="index"
-                name="Index"
+                name="Index Data"
                 fill={SERIES_COLORS.ts}
-                fillOpacity={0.5}
+                radius={[4, 4, 0, 0]}
                 isAnimationActive={false}
-              >
-                {chartData.map((row) => (
-                  <Cell
-                    key={row.name}
-                    fill={
-                      row.name.startsWith("PostgreSQL")
-                        ? SERIES_COLORS.pg
-                        : SERIES_COLORS.ts
-                    }
-                  />
-                ))}
-              </Bar>
+              />
             </BarChart>
           </ResponsiveContainer>
         </Card>
