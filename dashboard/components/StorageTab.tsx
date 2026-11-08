@@ -13,6 +13,7 @@ import {
   SERIES_COLORS,
 } from "./ui";
 import { formatBytes } from "@/lib/format";
+import { storageChartData } from "@/lib/storage";
 import {
   ResponsiveContainer,
   BarChart,
@@ -241,54 +242,7 @@ export function StorageTab() {
     return true;
   });
 
-  const hasCompression =
-    data.ts.afterCompressionBytes != null &&
-    data.ts.beforeCompressionBytes != null;
-
-  const chartData = [
-    {
-      name: "PostgreSQL",
-      table: data.pg.tableBytes,
-      index: data.pg.indexBytes,
-    },
-  ];
-
-  if (hasCompression) {
-    // Before compression: directly use before_compression_table_bytes and before_compression_index_bytes from hypertable_compression_stats
-    const beforeTable =
-      data.ts.beforeTableBytes != null
-        ? data.ts.beforeTableBytes
-        : Math.round((data.ts.beforeCompressionBytes || 0) * 0.6);
-    const beforeIndex =
-      data.ts.beforeIndexBytes != null
-        ? data.ts.beforeIndexBytes
-        : Math.round((data.ts.beforeCompressionBytes || 0) * 0.4);
-
-    // After compression (current state): total matches data.ts.totalBytes (58.2 GiB)
-    const afterIndex = data.ts.indexBytes || 0;
-    const afterTable = Math.max(0, (data.ts.totalBytes || 0) - afterIndex);
-
-    chartData.push(
-      {
-        name: "TimescaleDB (Before)",
-        table: beforeTable,
-        index: beforeIndex,
-      },
-      {
-        name: "TimescaleDB (After)",
-        table: afterTable,
-        index: afterIndex,
-      },
-    );
-  } else {
-    const tsIndex = data.ts.indexBytes || 0;
-    const tsTable = Math.max(0, (data.ts.totalBytes || 0) - tsIndex);
-    chartData.push({
-      name: "TimescaleDB",
-      table: tsTable,
-      index: tsIndex,
-    });
-  }
+  const chartData = storageChartData(data.pg, data.ts);
 
   return (
     <div className="flex flex-col gap-4">
@@ -318,11 +272,12 @@ export function StorageTab() {
           value={formatBytes(data.pg.totalBytes)}
         />
         <StatCard
-          label="TimescaleDB Total"
+          label="TimescaleDB After Total"
           value={formatBytes(data.ts.totalBytes)}
         />
         <StatCard
           label="Compression Ratio"
+          hint="All chunks: before / after"
           value={
             data.ts.compressionRatio
               ? `${data.ts.compressionRatio.toFixed(2)}x`
@@ -343,7 +298,27 @@ export function StorageTab() {
         initialSizes={[60, 40]}
       >
         {/* Storage Size Chart */}
-        <Card title="Storage Size Comparison" className="h-80 relative">
+        <Card
+          title="Storage Size Comparison"
+          className="h-96 relative"
+          footer={
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              <p>
+                Before total: {data.ts.beforeCompressionBytes != null
+                  ? formatBytes(data.ts.beforeCompressionBytes) : "Unavailable"}
+                {" · "}After total: {formatBytes(data.ts.totalBytes)}
+              </p>
+              <p>
+                {data.ts.beforeCompressionBytes == null
+                  ? "Before is unavailable because some chunk size records are missing."
+                  : data.ts.beforeSizeIsEstimate
+                    ? "Before estimates all chunks uncompressed using recorded sizes plus current uncompressed chunks. Later changes to compressed chunks can make the estimate stale."
+                    : "Before equals After while all chunks are uncompressed."}
+                {" "}After measures all compressed and uncompressed chunks now.
+              </p>
+            </div>
+          }
+        >
           {loading && (
             <div className="absolute inset-0 bg-white/50 z-10 dark:bg-slate-900/50" />
           )}
@@ -376,7 +351,7 @@ export function StorageTab() {
               <Legend verticalAlign="top" height={36} />
               <Bar
                 dataKey="table"
-                name="Table Data"
+                name="Table Data (incl. TOAST)"
                 fill={SERIES_COLORS.pg}
                 radius={[4, 4, 0, 0]}
                 isAnimationActive={false}

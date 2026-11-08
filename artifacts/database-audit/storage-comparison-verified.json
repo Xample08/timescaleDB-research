@@ -1,0 +1,43 @@
+{
+  "checkedAt": "2026-11-08T09:04:54.509Z",
+  "pg": {
+    "totalBytes": 131662045184,
+    "tableBytes": 76710461440,
+    "indexBytes": 54951583744
+  },
+  "ts": {
+    "totalBytes": 23127064576,
+    "tableBytes": 22741426176,
+    "indexBytes": 385638400
+  },
+  "before": {
+    "totalBytes": 138977353728,
+    "tableBytes": 76805120000,
+    "indexBytes": 62172233728
+  },
+  "parent": {
+    "totalBytes": 16384,
+    "tableBytes": 0,
+    "indexBytes": 16384
+  },
+  "totalChunks": 369,
+  "compressedChunks": 364,
+  "ratio": 6.0092950089404376,
+  "chart": [
+    {
+      "name": "PostgreSQL",
+      "table": 76710461440,
+      "index": 54951583744
+    },
+    {
+      "name": "TimescaleDB (Before)",
+      "table": 76805120000,
+      "index": 62172233728
+    },
+    {
+      "name": "TimescaleDB (After)",
+      "table": 22741426176,
+      "index": 385638400
+    }
+  ]
+}

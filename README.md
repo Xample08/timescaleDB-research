@@ -42,6 +42,7 @@ cd dashboard && npm run dev
 - S12 late-row delay is uniformly distributed between 1 minute and 24 hours.
 - Random walk for vehicle altitude uses Â±0.5 m steps clamped to 5..25 m.
 - Benchmark B7 window clamps to available `telemetry_hourly` coverage and prompts manual refresh when empty.
+- B7 uses complete UTC hours before the fixed reference time. Aggregate coverage includes the entire last materialized bucket, ending one hour after its bucket timestamp. The selected seven-day range can still be empty when historical telemetry has gaps; minimum/maximum timestamps alone do not prove continuous coverage.
 
 ## Deviations
 - None. All schema structures, endpoints, and design tokens strictly match SPEC.md.
@@ -65,6 +66,8 @@ Incidents persist using telemetry timestamps, not a count of ticks. Burst mode s
 Both selected destinations receive identical scenario data in their existing columns. No schema migration is required. `db/warning-reports.sql` contains report examples for speeding, altitude, GPS quality, and contiguous stationary episodes. Use these queries in the future dashboard and evaluate alerts there; the simulator does not send notifications.
 
 ## Dashboard workspace and SQL execution
+
+The Storage chart compares PostgreSQL's current full table with two full-hypertable TimescaleDB measurements. **Before** reconstructs an all-uncompressed baseline: recorded pre-compression sizes for compressed chunks, current sizes for uncompressed chunks, and the hypertable parent. It is an estimate, not a simultaneous historical snapshot; later changes to compressed chunks can make their recorded baseline stale. Missing chunk-size records make Before unavailable rather than inventing a size. **After** is the current total across both compressed and uncompressed chunks. In every group, Table Data includes TOAST and auxiliary relation storage, while Index Data is shown separately. Their sum matches the group's total. The displayed compression ratio uses the full Before total divided by the current full After total. With no compressed chunks, Before equals After.
 
 The dashboard uses the simulator's dark design: PostgreSQL is blue, TimescaleDB is teal, and continuous aggregates are purple. Drag horizontal dividers to adjust the workspace, benchmark/probe controls, or storage columns. **Reset sizes** restores defaults from `dashboard/lib/layout.ts`; vertical resizing is disabled.
 

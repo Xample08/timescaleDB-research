@@ -62,14 +62,39 @@ describe('bench.ts', () => {
   });
 
   it('computes B7 window clamp', () => {
-    const ref = new Date('2026-10-07T12:30:00Z');
+    const ref = new Date('2026-10-07T14:30:00Z');
     const aggMin = new Date('2026-09-20T00:00:00Z');
     const aggMax = new Date('2026-10-07T11:00:00Z');
     const res = computeB7Window(ref, aggMin, aggMax);
-    expect(res.end).toEqual(new Date('2026-10-07T11:00:00Z')); // clamped to aggMax
+    expect(res.end).toEqual(new Date('2026-10-07T12:00:00Z')); // end of the last materialized bucket
     expect(res.start).toEqual(new Date(res.end.getTime() - 7 * 86400_000));
     expect(res.error).toBeNull();
     expect(res.note).toContain('window end clamped');
+  });
+
+  it('includes the newest materialized hour when it is complete at the reference time', () => {
+    const maxBucket = new Date('2026-11-08T07:00:00Z');
+    const res = computeB7Window(
+      new Date('2026-11-08T09:30:00Z'),
+      new Date('2025-10-10T15:00:00Z'),
+      maxBucket,
+    );
+    expect(res.end).toEqual(new Date('2026-11-08T08:00:00Z'));
+    expect(maxBucket.getTime()).toBeLessThan(res.end.getTime());
+    for (const variant of ['pg', 'ts', 'ts_cagg'] as const) {
+      const query = CATALOG.find(q => q.id === 'B7')!.buildSql(variant, null, res.end, false);
+      expect(query.values).toEqual([res.start, res.end]);
+    }
+  });
+
+  it('still excludes the reference hour even when that bucket has been materialized', () => {
+    const res = computeB7Window(
+      new Date('2026-11-08T07:54:57Z'),
+      new Date('2025-10-10T15:00:00Z'),
+      new Date('2026-11-08T07:00:00Z'),
+    );
+    expect(res.end).toEqual(new Date('2026-11-08T07:00:00Z'));
+    expect(res.start).toEqual(new Date('2026-11-01T07:00:00Z'));
   });
 
   it('handles B7 window errors (not covered)', () => {

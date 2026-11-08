@@ -1,0 +1,101 @@
+{
+  "checkedAt": "2026-11-08T08:56:27.621Z",
+  "checks": {
+    "postgres": [
+      {
+        "table_bytes": "76689244160",
+        "index_bytes": "54951583744",
+        "total_bytes": "131662045184"
+      }
+    ],
+    "timescale_current": [
+      {
+        "table_bytes": "1024884736",
+        "index_bytes": "385638400",
+        "toast_bytes": "21716541440",
+        "total_bytes": "23127064576",
+        "node_name": null
+      }
+    ],
+    "timescale_compression": [
+      {
+        "total_chunks": "369",
+        "number_compressed_chunks": "364",
+        "before_compression_table_bytes": "76377554944",
+        "before_compression_index_bytes": "61861838848",
+        "before_compression_toast_bytes": "0",
+        "before_compression_total_bytes": "138239393792",
+        "after_compression_table_bytes": "644481024",
+        "after_compression_index_bytes": "69279744",
+        "after_compression_toast_bytes": "21716541440",
+        "after_compression_total_bytes": "22430302208",
+        "node_name": null
+      }
+    ],
+    "uncompressed_chunks": [
+      {
+        "chunks": 5,
+        "table_bytes": "427565056",
+        "index_bytes": "310378496",
+        "toast_bytes": "0",
+        "total_bytes": "737943552"
+      }
+    ],
+    "indexes": [
+      {
+        "relname": "telemetry_pg",
+        "index_name": "telemetry_pg_pkey",
+        "reloptions": null,
+        "current_bytes": "47709380608",
+        "definition": "CREATE UNIQUE INDEX telemetry_pg_pkey ON public.telemetry_pg USING btree (vehicle_id, \"time\")"
+      },
+      {
+        "relname": "telemetry_pg",
+        "index_name": "telemetry_pg_time_idx",
+        "reloptions": null,
+        "current_bytes": "7239639040",
+        "definition": "CREATE INDEX telemetry_pg_time_idx ON public.telemetry_pg USING btree (\"time\" DESC)"
+      },
+      {
+        "relname": "telemetry_ts",
+        "index_name": "telemetry_ts_pkey",
+        "reloptions": null,
+        "current_bytes": "8192",
+        "definition": "CREATE UNIQUE INDEX telemetry_ts_pkey ON public.telemetry_ts USING btree (vehicle_id, \"time\")"
+      },
+      {
+        "relname": "telemetry_ts",
+        "index_name": "telemetry_ts_time_idx",
+        "reloptions": null,
+        "current_bytes": "8192",
+        "definition": "CREATE INDEX telemetry_ts_time_idx ON public.telemetry_ts USING btree (\"time\" DESC)"
+      }
+    ],
+    "stats_function": [
+      {
+        "definition": "CREATE OR REPLACE FUNCTION public.hypertable_compression_stats(hypertable regclass)\n RETURNS TABLE(total_chunks bigint, number_compressed_chunks bigint, before_compression_table_bytes bigint, before_compression_index_bytes bigint, before_compression_toast_bytes bigint, before_compression_total_bytes bigint, after_compression_table_bytes bigint, after_compression_index_bytes bigint, after_compression_toast_bytes bigint, after_compression_total_bytes bigint, node_name name)\n LANGUAGE sql\n STABLE STRICT\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\n\tSELECT\n        count(*)::bigint AS total_chunks,\n        (count(*) FILTER (WHERE ch.compression_status = 'Compressed'))::bigint AS number_compressed_chunks,\n        sum(ch.before_compression_table_bytes)::bigint AS before_compression_table_bytes,\n        sum(ch.before_compression_index_bytes)::bigint AS before_compression_index_bytes,\n        sum(ch.before_compression_toast_bytes)::bigint AS before_compression_toast_bytes,\n        sum(ch.before_compression_total_bytes)::bigint AS before_compression_total_bytes,\n        sum(ch.after_compression_table_bytes)::bigint AS after_compression_table_bytes,\n        sum(ch.after_compression_index_bytes)::bigint AS after_compression_index_bytes,\n        sum(ch.after_compression_toast_bytes)::bigint AS after_compression_toast_bytes,\n        sum(ch.after_compression_total_bytes)::bigint AS after_compression_total_bytes,\n        ch.node_name\n    FROM\n\t    public.chunk_compression_stats(hypertable) ch\n    GROUP BY\n        ch.node_name;\n$function$\n"
+      }
+    ],
+    "chunk_stats_function": [
+      {
+        "definition": "CREATE OR REPLACE FUNCTION public.chunk_compression_stats(hypertable regclass)\n RETURNS TABLE(chunk_schema name, chunk_name name, compression_status text, before_compression_table_bytes bigint, before_compression_index_bytes bigint, before_compression_toast_bytes bigint, before_compression_total_bytes bigint, after_compression_table_bytes bigint, after_compression_index_bytes bigint, after_compression_toast_bytes bigint, after_compression_total_bytes bigint, node_name name)\n LANGUAGE plpgsql\n STABLE STRICT\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\nDECLARE\n    table_name name;\n    schema_name name;\nBEGIN\n    SELECT\n      relname, nspname\n    INTO\n\t    table_name, schema_name\n    FROM\n        pg_class c\n        INNER JOIN pg_namespace n ON (n.OID = c.relnamespace)\n        INNER JOIN _timescaledb_catalog.hypertable ht ON (ht.schema_name = n.nspname\n                AND ht.table_name = c.relname)\n    WHERE\n        c.OID = hypertable;\n\n    IF table_name IS NULL THEN\n\t    RETURN;\n\tEND IF;\n\n  RETURN QUERY\n  SELECT\n      *,\n      NULL::name\n  FROM\n      _timescaledb_functions.compressed_chunk_local_stats(schema_name, table_name);\nEND;\n$function$\n"
+      }
+    ],
+    "compression_stats_coverage": [
+      {
+        "compression_status": "Uncompressed",
+        "chunks": 5,
+        "chunks_with_before_size": 0,
+        "recorded_table_bytes": null,
+        "recorded_index_bytes": null
+      },
+      {
+        "compression_status": "Compressed",
+        "chunks": 364,
+        "chunks_with_before_size": 364,
+        "recorded_table_bytes": "76377554944",
+        "recorded_index_bytes": "61861838848"
+      }
+    ]
+  }
+}

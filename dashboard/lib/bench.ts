@@ -511,7 +511,9 @@ export function computeB7Window(
     };
   }
 
-  const end = new Date(Math.min(floorRef.getTime(), aggMax.getTime()));
+  // aggMax is the start of the last materialized hour; the query end is exclusive.
+  const aggregateEnd = aggMax.getTime() + 3600_000;
+  const end = new Date(Math.min(floorRef.getTime(), aggregateEnd));
   const start = new Date(end.getTime() - 7 * 86400_000);
 
   if (

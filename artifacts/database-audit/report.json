@@ -1,0 +1,1495 @@
+{
+  "checkedAt": "2026-11-08T08:00:26.070Z",
+  "mode": "read-only",
+  "checks": {
+    "server": {
+      "ok": true,
+      "durationMs": 1321,
+      "rows": [
+        {
+          "postgres_version": "18.6 (Ubuntu 18.6-1.pgdg22.04+2)",
+          "session_timezone": "Etc/UTC",
+          "search_path": "\"$user\", public",
+          "default_read_only": "off",
+          "max_connections": "200",
+          "autovacuum": "on",
+          "analyze_scale_factor": "0.01",
+          "analyze_threshold": "50",
+          "database_bytes": "156022724287",
+          "audit_statement_timeout": "5s"
+        }
+      ]
+    },
+    "extensions": {
+      "ok": true,
+      "durationMs": 1306,
+      "rows": [
+        {
+          "extname": "timescaledb",
+          "extversion": "2.31.0"
+        },
+        {
+          "extname": "timescaledb_toolkit",
+          "extversion": "1.26.0"
+        }
+      ]
+    },
+    "relations": {
+      "ok": true,
+      "durationMs": 1313,
+      "rows": [
+        {
+          "schema_name": "public",
+          "relname": "simulator_bulk_jobs",
+          "relkind": "r",
+          "estimated_rows": "-1",
+          "relpages": 0,
+          "reloptions": null,
+          "total_bytes": "81920",
+          "table_bytes": "8192",
+          "index_bytes": "16384",
+          "row_security": false
+        },
+        {
+          "schema_name": "public",
+          "relname": "telemetry_hourly",
+          "relkind": "v",
+          "estimated_rows": "-1",
+          "relpages": 0,
+          "reloptions": null,
+          "total_bytes": "0",
+          "table_bytes": "0",
+          "index_bytes": "0",
+          "row_security": false
+        },
+        {
+          "schema_name": "public",
+          "relname": "telemetry_pg",
+          "relkind": "r",
+          "estimated_rows": "1001675840",
+          "relpages": 9361480,
+          "reloptions": null,
+          "total_bytes": "131662045184",
+          "table_bytes": "76689244160",
+          "index_bytes": "54951583744",
+          "row_security": false
+        },
+        {
+          "schema_name": "public",
+          "relname": "telemetry_ts",
+          "relkind": "r",
+          "estimated_rows": "-1",
+          "relpages": 0,
+          "reloptions": null,
+          "total_bytes": "16384",
+          "table_bytes": "0",
+          "index_bytes": "16384",
+          "row_security": false
+        },
+        {
+          "schema_name": "public",
+          "relname": "vehicles",
+          "relkind": "r",
+          "estimated_rows": "3000",
+          "relpages": 41,
+          "reloptions": null,
+          "total_bytes": "466944",
+          "table_bytes": "335872",
+          "index_bytes": "90112",
+          "row_security": false
+        }
+      ]
+    },
+    "columns": {
+      "ok": true,
+      "durationMs": 1309,
+      "rows": [
+        {
+          "relname": "simulator_bulk_jobs",
+          "column_name": "id",
+          "position": 1,
+          "data_type": "uuid",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "simulator_bulk_jobs",
+          "column_name": "state",
+          "position": 2,
+          "data_type": "jsonb",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_hourly",
+          "column_name": "bucket",
+          "position": 1,
+          "data_type": "timestamp with time zone",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_hourly",
+          "column_name": "vehicle_id",
+          "position": 2,
+          "data_type": "integer",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_hourly",
+          "column_name": "avg_speed",
+          "position": 3,
+          "data_type": "double precision",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_hourly",
+          "column_name": "max_speed",
+          "position": 4,
+          "data_type": "real",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_hourly",
+          "column_name": "point_count",
+          "position": 5,
+          "data_type": "bigint",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_pg",
+          "column_name": "time",
+          "position": 1,
+          "data_type": "timestamp with time zone",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_pg",
+          "column_name": "vehicle_id",
+          "position": 2,
+          "data_type": "integer",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_pg",
+          "column_name": "latitude",
+          "position": 3,
+          "data_type": "double precision",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_pg",
+          "column_name": "longitude",
+          "position": 4,
+          "data_type": "double precision",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_pg",
+          "column_name": "speed_kmh",
+          "position": 5,
+          "data_type": "real",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_pg",
+          "column_name": "heading_deg",
+          "position": 6,
+          "data_type": "real",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_pg",
+          "column_name": "altitude_m",
+          "position": 7,
+          "data_type": "real",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_pg",
+          "column_name": "gps_accuracy_m",
+          "position": 8,
+          "data_type": "real",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_ts",
+          "column_name": "time",
+          "position": 1,
+          "data_type": "timestamp with time zone",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_ts",
+          "column_name": "vehicle_id",
+          "position": 2,
+          "data_type": "integer",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_ts",
+          "column_name": "latitude",
+          "position": 3,
+          "data_type": "double precision",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_ts",
+          "column_name": "longitude",
+          "position": 4,
+          "data_type": "double precision",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_ts",
+          "column_name": "speed_kmh",
+          "position": 5,
+          "data_type": "real",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_ts",
+          "column_name": "heading_deg",
+          "position": 6,
+          "data_type": "real",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_ts",
+          "column_name": "altitude_m",
+          "position": 7,
+          "data_type": "real",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "telemetry_ts",
+          "column_name": "gps_accuracy_m",
+          "position": 8,
+          "data_type": "real",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "vehicles",
+          "column_name": "id",
+          "position": 1,
+          "data_type": "integer",
+          "not_null": true,
+          "identity_kind": "a",
+          "default_expression": null
+        },
+        {
+          "relname": "vehicles",
+          "column_name": "plate_number",
+          "position": 2,
+          "data_type": "text",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "vehicles",
+          "column_name": "name",
+          "position": 3,
+          "data_type": "text",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "vehicles",
+          "column_name": "vehicle_type",
+          "position": 4,
+          "data_type": "text",
+          "not_null": false,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "vehicles",
+          "column_name": "is_active",
+          "position": 5,
+          "data_type": "boolean",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        },
+        {
+          "relname": "vehicles",
+          "column_name": "created_at",
+          "position": 6,
+          "data_type": "timestamp with time zone",
+          "not_null": true,
+          "identity_kind": "",
+          "default_expression": null
+        }
+      ]
+    },
+    "constraints": {
+      "ok": true,
+      "durationMs": 1310,
+      "rows": [
+        {
+          "relname": "simulator_bulk_jobs",
+          "conname": "simulator_bulk_jobs_id_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL id"
+        },
+        {
+          "relname": "simulator_bulk_jobs",
+          "conname": "simulator_bulk_jobs_pkey",
+          "contype": "p",
+          "convalidated": true,
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "relname": "simulator_bulk_jobs",
+          "conname": "simulator_bulk_jobs_state_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL state"
+        },
+        {
+          "relname": "telemetry_pg",
+          "conname": "telemetry_pg_latitude_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL latitude"
+        },
+        {
+          "relname": "telemetry_pg",
+          "conname": "telemetry_pg_longitude_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL longitude"
+        },
+        {
+          "relname": "telemetry_pg",
+          "conname": "telemetry_pg_pkey",
+          "contype": "p",
+          "convalidated": true,
+          "definition": "PRIMARY KEY (vehicle_id, \"time\")"
+        },
+        {
+          "relname": "telemetry_pg",
+          "conname": "telemetry_pg_time_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL \"time\""
+        },
+        {
+          "relname": "telemetry_pg",
+          "conname": "telemetry_pg_vehicle_id_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL vehicle_id"
+        },
+        {
+          "relname": "telemetry_ts",
+          "conname": "telemetry_ts_latitude_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL latitude"
+        },
+        {
+          "relname": "telemetry_ts",
+          "conname": "telemetry_ts_longitude_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL longitude"
+        },
+        {
+          "relname": "telemetry_ts",
+          "conname": "telemetry_ts_pkey",
+          "contype": "p",
+          "convalidated": true,
+          "definition": "PRIMARY KEY (vehicle_id, \"time\")"
+        },
+        {
+          "relname": "telemetry_ts",
+          "conname": "telemetry_ts_time_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL \"time\""
+        },
+        {
+          "relname": "telemetry_ts",
+          "conname": "telemetry_ts_vehicle_id_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL vehicle_id"
+        },
+        {
+          "relname": "vehicles",
+          "conname": "vehicles_created_at_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL created_at"
+        },
+        {
+          "relname": "vehicles",
+          "conname": "vehicles_id_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL id"
+        },
+        {
+          "relname": "vehicles",
+          "conname": "vehicles_is_active_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL is_active"
+        },
+        {
+          "relname": "vehicles",
+          "conname": "vehicles_pkey",
+          "contype": "p",
+          "convalidated": true,
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "relname": "vehicles",
+          "conname": "vehicles_plate_number_not_null",
+          "contype": "n",
+          "convalidated": true,
+          "definition": "NOT NULL plate_number"
+        }
+      ]
+    },
+    "indexes": {
+      "ok": true,
+      "durationMs": 1310,
+      "rows": [
+        {
+          "relname": "simulator_bulk_jobs",
+          "index_name": "simulator_bulk_jobs_pkey",
+          "method": "btree",
+          "primary_key": true,
+          "unique_index": true,
+          "valid": true,
+          "ready": true,
+          "live": true,
+          "definition": "CREATE UNIQUE INDEX simulator_bulk_jobs_pkey ON public.simulator_bulk_jobs USING btree (id)",
+          "first_key": "id",
+          "predicate": null,
+          "index_bytes": "16384"
+        },
+        {
+          "relname": "telemetry_pg",
+          "index_name": "telemetry_pg_pkey",
+          "method": "btree",
+          "primary_key": true,
+          "unique_index": true,
+          "valid": true,
+          "ready": true,
+          "live": true,
+          "definition": "CREATE UNIQUE INDEX telemetry_pg_pkey ON public.telemetry_pg USING btree (vehicle_id, \"time\")",
+          "first_key": "vehicle_id",
+          "predicate": null,
+          "index_bytes": "47709380608"
+        },
+        {
+          "relname": "telemetry_pg",
+          "index_name": "telemetry_pg_time_idx",
+          "method": "btree",
+          "primary_key": false,
+          "unique_index": false,
+          "valid": true,
+          "ready": true,
+          "live": true,
+          "definition": "CREATE INDEX telemetry_pg_time_idx ON public.telemetry_pg USING btree (\"time\" DESC)",
+          "first_key": "\"time\"",
+          "predicate": null,
+          "index_bytes": "7239639040"
+        },
+        {
+          "relname": "telemetry_ts",
+          "index_name": "telemetry_ts_pkey",
+          "method": "btree",
+          "primary_key": true,
+          "unique_index": true,
+          "valid": true,
+          "ready": true,
+          "live": true,
+          "definition": "CREATE UNIQUE INDEX telemetry_ts_pkey ON public.telemetry_ts USING btree (vehicle_id, \"time\")",
+          "first_key": "vehicle_id",
+          "predicate": null,
+          "index_bytes": "8192"
+        },
+        {
+          "relname": "telemetry_ts",
+          "index_name": "telemetry_ts_time_idx",
+          "method": "btree",
+          "primary_key": false,
+          "unique_index": false,
+          "valid": true,
+          "ready": true,
+          "live": true,
+          "definition": "CREATE INDEX telemetry_ts_time_idx ON public.telemetry_ts USING btree (\"time\" DESC)",
+          "first_key": "\"time\"",
+          "predicate": null,
+          "index_bytes": "8192"
+        },
+        {
+          "relname": "vehicles",
+          "index_name": "vehicles_pkey",
+          "method": "btree",
+          "primary_key": true,
+          "unique_index": true,
+          "valid": true,
+          "ready": true,
+          "live": true,
+          "definition": "CREATE UNIQUE INDEX vehicles_pkey ON public.vehicles USING btree (id)",
+          "first_key": "id",
+          "predicate": null,
+          "index_bytes": "90112"
+        }
+      ]
+    },
+    "statistics": {
+      "ok": true,
+      "durationMs": 1319,
+      "rows": [
+        {
+          "relname": "simulator_bulk_jobs",
+          "n_live_tup": "2",
+          "n_dead_tup": "0",
+          "n_mod_since_analyze": "2",
+          "last_analyze": null,
+          "last_autoanalyze": null,
+          "last_vacuum": null,
+          "last_autovacuum": null,
+          "seq_scan": "1",
+          "idx_scan": "0",
+          "estimated_rows": "-1"
+        },
+        {
+          "relname": "telemetry_hourly",
+          "n_live_tup": null,
+          "n_dead_tup": null,
+          "n_mod_since_analyze": null,
+          "last_analyze": null,
+          "last_autoanalyze": null,
+          "last_vacuum": null,
+          "last_autovacuum": null,
+          "seq_scan": null,
+          "idx_scan": null,
+          "estimated_rows": "-1"
+        },
+        {
+          "relname": "telemetry_pg",
+          "n_live_tup": "1001678800",
+          "n_dead_tup": "0",
+          "n_mod_since_analyze": "440",
+          "last_analyze": null,
+          "last_autoanalyze": "2026-10-29T08:50:04.620Z",
+          "last_vacuum": null,
+          "last_autovacuum": "2026-10-29T08:49:58.102Z",
+          "seq_scan": "24",
+          "idx_scan": "48569",
+          "estimated_rows": "1001675840"
+        },
+        {
+          "relname": "telemetry_ts",
+          "n_live_tup": "0",
+          "n_dead_tup": "0",
+          "n_mod_since_analyze": "0",
+          "last_analyze": null,
+          "last_autoanalyze": null,
+          "last_vacuum": null,
+          "last_autovacuum": null,
+          "seq_scan": "3",
+          "idx_scan": "0",
+          "estimated_rows": "-1"
+        },
+        {
+          "relname": "vehicles",
+          "n_live_tup": "3000",
+          "n_dead_tup": "0",
+          "n_mod_since_analyze": "0",
+          "last_analyze": null,
+          "last_autoanalyze": "2026-10-29T06:27:51.134Z",
+          "last_vacuum": null,
+          "last_autovacuum": "2026-10-29T06:27:51.129Z",
+          "seq_scan": "9",
+          "idx_scan": "40",
+          "estimated_rows": "3000"
+        }
+      ]
+    },
+    "hypertables": {
+      "ok": true,
+      "durationMs": 1310,
+      "rows": [
+        {
+          "info": {
+            "owner": "tsdbadmin",
+            "num_chunks": 369,
+            "tablespaces": null,
+            "num_dimensions": 1,
+            "hypertable_name": "telemetry_ts",
+            "hypertable_schema": "public",
+            "primary_dimension": "time",
+            "compression_enabled": true,
+            "primary_dimension_type": "timestamp with time zone"
+          }
+        }
+      ]
+    },
+    "dimensions": {
+      "ok": true,
+      "durationMs": 1319,
+      "rows": [
+        {
+          "info": {
+            "column_name": "time",
+            "column_type": "timestamp with time zone",
+            "time_interval": "1 day",
+            "dimension_type": "Time",
+            "num_partitions": null,
+            "hypertable_name": "telemetry_ts",
+            "dimension_number": 1,
+            "integer_interval": null,
+            "integer_now_func": null,
+            "hypertable_schema": "public"
+          }
+        }
+      ]
+    },
+    "timescale_views": {
+      "ok": true,
+      "durationMs": 1384,
+      "rows": [
+        {
+          "table_name": "compression_settings"
+        },
+        {
+          "table_name": "continuous_aggregates"
+        },
+        {
+          "table_name": "hypertable_columnstore_settings"
+        },
+        {
+          "table_name": "hypertable_compression_settings"
+        },
+        {
+          "table_name": "job_stats"
+        },
+        {
+          "table_name": "jobs"
+        }
+      ]
+    },
+    "compression_settings": {
+      "ok": true,
+      "durationMs": 1312,
+      "rows": [
+        {
+          "info": {
+            "attname": "vehicle_id",
+            "orderby_asc": null,
+            "hypertable_name": "telemetry_ts",
+            "hypertable_schema": "public",
+            "orderby_nullsfirst": null,
+            "orderby_column_index": null,
+            "segmentby_column_index": 1
+          }
+        },
+        {
+          "info": {
+            "attname": "time",
+            "orderby_asc": false,
+            "hypertable_name": "telemetry_ts",
+            "hypertable_schema": "public",
+            "orderby_nullsfirst": true,
+            "orderby_column_index": 1,
+            "segmentby_column_index": null
+          }
+        }
+      ]
+    },
+    "hypertable_compression_settings": {
+      "ok": true,
+      "durationMs": 1307,
+      "rows": []
+    },
+    "hypertable_columnstore_settings": {
+      "ok": true,
+      "durationMs": 1309,
+      "rows": []
+    },
+    "continuous_aggregates": {
+      "ok": true,
+      "durationMs": 1317,
+      "rows": [
+        {
+          "info": {
+            "view_name": "telemetry_hourly",
+            "view_owner": "tsdbadmin",
+            "view_schema": "public",
+            "hypertable_name": "telemetry_ts",
+            "view_definition": " SELECT time_bucket('01:00:00'::interval, \"time\") AS bucket,\n    vehicle_id,\n    avg(speed_kmh) AS avg_speed,\n    max(speed_kmh) AS max_speed,\n    count(*) AS point_count\n   FROM telemetry_ts\n  GROUP BY (time_bucket('01:00:00'::interval, \"time\")), vehicle_id;",
+            "hypertable_schema": "public",
+            "materialized_only": true,
+            "compression_enabled": false,
+            "granular_refresh_enabled": false,
+            "materialization_hypertable_name": "_materialized_hypertable_2",
+            "materialization_hypertable_schema": "_timescaledb_internal"
+          }
+        }
+      ]
+    },
+    "chunk_summary": {
+      "ok": true,
+      "durationMs": 1322,
+      "rows": [
+        {
+          "hypertable_name": "telemetry_ts",
+          "chunks": 369,
+          "compressed_chunks": 364,
+          "earliest_chunk_start": "2025-10-10T00:00:00.000Z",
+          "latest_chunk_end": "2026-11-09T00:00:00.000Z"
+        }
+      ]
+    },
+    "chunk_integrity": {
+      "ok": true,
+      "durationMs": 1326,
+      "rows": [
+        {
+          "chunks": 369,
+          "without_valid_primary_key": 0,
+          "without_valid_time_index": 0
+        }
+      ]
+    },
+    "chunk_statistics": {
+      "ok": true,
+      "durationMs": 1317,
+      "rows": [
+        {
+          "chunks": 369,
+          "estimated_live_rows": "1001676141",
+          "estimated_dead_rows": "0",
+          "estimated_changes_since_analyze": "0",
+          "chunks_never_analyzed": 0,
+          "latest_analyze": "2026-11-08T07:55:21.531Z"
+        }
+      ]
+    },
+    "policies": {
+      "ok": true,
+      "durationMs": 1305,
+      "rows": [
+        {
+          "job_id": 1001,
+          "proc_schema": "_timescaledb_functions",
+          "proc_name": "policy_compression",
+          "schedule_interval": {
+            "hours": 12
+          },
+          "scheduled": true,
+          "hypertable_schema": "public",
+          "hypertable_name": "telemetry_ts",
+          "config": {
+            "hypertable_id": 1,
+            "compress_after": "30 days"
+          }
+        }
+      ]
+    },
+    "dashboard_permissions": {
+      "ok": true,
+      "durationMs": 1310,
+      "rows": [
+        {
+          "schema_name": "public",
+          "relname": "simulator_bulk_jobs",
+          "can_select": true,
+          "can_insert": true,
+          "can_update": true,
+          "can_delete": true,
+          "has_owner_role": true
+        },
+        {
+          "schema_name": "public",
+          "relname": "telemetry_hourly",
+          "can_select": true,
+          "can_insert": true,
+          "can_update": true,
+          "can_delete": true,
+          "has_owner_role": true
+        },
+        {
+          "schema_name": "public",
+          "relname": "telemetry_pg",
+          "can_select": true,
+          "can_insert": true,
+          "can_update": true,
+          "can_delete": true,
+          "has_owner_role": true
+        },
+        {
+          "schema_name": "public",
+          "relname": "telemetry_ts",
+          "can_select": true,
+          "can_insert": true,
+          "can_update": true,
+          "can_delete": true,
+          "has_owner_role": true
+        },
+        {
+          "schema_name": "public",
+          "relname": "vehicles",
+          "can_select": true,
+          "can_insert": true,
+          "can_update": true,
+          "can_delete": true,
+          "has_owner_role": true
+        }
+      ]
+    },
+    "schema_permissions": {
+      "ok": true,
+      "durationMs": 1306,
+      "rows": [
+        {
+          "public_usage": true,
+          "public_create": true
+        }
+      ]
+    },
+    "identity_sequence": {
+      "ok": true,
+      "durationMs": 1305,
+      "rows": [
+        {
+          "sequence": "public.vehicles_id_seq",
+          "can_use": true,
+          "can_read": true
+        }
+      ]
+    },
+    "identity_position": {
+      "ok": true,
+      "durationMs": 1310,
+      "rows": [
+        {
+          "max_vehicle_id": 3400,
+          "last_value": "1",
+          "is_called": false
+        }
+      ]
+    },
+    "vehicles_summary": {
+      "ok": true,
+      "durationMs": 1304,
+      "rows": [
+        {
+          "total": 3000,
+          "active": 3000,
+          "min_id": 1,
+          "max_id": 3400
+        }
+      ]
+    },
+    "function_support": {
+      "ok": true,
+      "durationMs": 1307,
+      "rows": [
+        {
+          "proname": "approximate_row_count",
+          "arguments": "relation regclass",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "chunks_detailed_size",
+          "arguments": "hypertable regclass",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "compress_chunk",
+          "arguments": "uncompressed_chunk regclass, if_not_compressed boolean, recompress boolean",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "decompress_chunk",
+          "arguments": "uncompressed_chunk regclass, if_compressed boolean",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "hypertable_compression_stats",
+          "arguments": "hypertable regclass",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "hypertable_detailed_size",
+          "arguments": "hypertable regclass",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "refresh_continuous_aggregate",
+          "arguments": "IN continuous_aggregate regclass, IN window_start \"any\", IN window_end \"any\", IN force boolean, IN options jsonb",
+          "prokind": "p",
+          "can_execute": true
+        },
+        {
+          "proname": "show_chunks",
+          "arguments": "relation regclass, older_than \"any\", newer_than \"any\", created_before \"any\", created_after \"any\"",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts timestamp without time zone",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts timestamp with time zone",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts date",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts uuid",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts timestamp without time zone, origin timestamp without time zone",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts timestamp with time zone, origin timestamp with time zone",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts date, origin date",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts uuid, origin timestamp with time zone",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts timestamp without time zone, \"offset\" interval",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts timestamp with time zone, \"offset\" interval",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts date, \"offset\" interval",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts uuid, \"offset\" interval",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts timestamp with time zone, timezone text, origin timestamp with time zone, \"offset\" interval",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width interval, ts uuid, timezone text, origin timestamp with time zone, \"offset\" interval",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width smallint, ts smallint",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width integer, ts integer",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width bigint, ts bigint",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width smallint, ts smallint, \"offset\" smallint",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width integer, ts integer, \"offset\" integer",
+          "prokind": "f",
+          "can_execute": true
+        },
+        {
+          "proname": "time_bucket",
+          "arguments": "bucket_width bigint, ts bigint, \"offset\" bigint",
+          "prokind": "f",
+          "can_execute": true
+        }
+      ]
+    },
+    "active_work": {
+      "ok": true,
+      "durationMs": 1308,
+      "rows": [
+        {
+          "backend_type": "TimescaleDB Background Worker Scheduler",
+          "state": "idle",
+          "wait_event_type": "Extension",
+          "operation": "other",
+          "sessions": 1,
+          "oldest_query_seconds": null
+        },
+        {
+          "backend_type": "client backend",
+          "state": "idle",
+          "wait_event_type": "Client",
+          "operation": "other",
+          "sessions": 5,
+          "oldest_query_seconds": "3"
+        },
+        {
+          "backend_type": "client backend",
+          "state": "idle in transaction",
+          "wait_event_type": "Client",
+          "operation": "latest-time",
+          "sessions": 1,
+          "oldest_query_seconds": "-1"
+        }
+      ]
+    },
+    "index_build_progress": {
+      "ok": true,
+      "durationMs": 1312,
+      "rows": []
+    },
+    "approximate_rows_telemetry_pg": {
+      "ok": true,
+      "durationMs": 1306,
+      "rows": [
+        {
+          "estimated_rows": "1001675840"
+        }
+      ]
+    },
+    "plan_latest_telemetry_pg": {
+      "ok": true,
+      "durationMs": 1308,
+      "rows": [
+        {
+          "QUERY PLAN": [
+            {
+              "Plan": {
+                "Node Type": "Result",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 0.59,
+                "Total Cost": 0.6,
+                "Plan Rows": 1,
+                "Plan Width": 8,
+                "Disabled": false,
+                "Plans": [
+                  {
+                    "Node Type": "Limit",
+                    "Parent Relationship": "InitPlan",
+                    "Subplan Name": "InitPlan 1",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Startup Cost": 0.57,
+                    "Total Cost": 0.59,
+                    "Plan Rows": 1,
+                    "Plan Width": 8,
+                    "Disabled": false,
+                    "Plans": [
+                      {
+                        "Node Type": "Index Only Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Scan Direction": "Forward",
+                        "Index Name": "telemetry_pg_time_idx",
+                        "Relation Name": "telemetry_pg",
+                        "Alias": "telemetry_pg",
+                        "Startup Cost": 0.57,
+                        "Total Cost": 16795967.63,
+                        "Plan Rows": 1001675840,
+                        "Plan Width": 8,
+                        "Disabled": false
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "allocated_by_plan": 231,
+              "base_allocation": 11611
+            }
+          ]
+        }
+      ]
+    },
+    "approximate_rows_telemetry_ts": {
+      "ok": true,
+      "durationMs": 1329,
+      "rows": [
+        {
+          "estimated_rows": "999210241"
+        }
+      ]
+    },
+    "plan_latest_telemetry_ts": {
+      "ok": true,
+      "durationMs": 1409,
+      "rows": [
+        {
+          "QUERY PLAN": [
+            {
+              "Plan": {
+                "Node Type": "Result",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 2.02,
+                "Total Cost": 2.03,
+                "Plan Rows": 1,
+                "Plan Width": 8,
+                "Disabled": false,
+                "Plans": [
+                  {
+                    "Node Type": "Limit",
+                    "Parent Relationship": "InitPlan",
+                    "Subplan Name": "InitPlan 1",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Startup Cost": 2,
+                    "Total Cost": 2.02,
+                    "Plan Rows": 1,
+                    "Plan Width": 8,
+                    "Disabled": false,
+                    "Plans": [
+                      {
+                        "Node Type": "Custom Scan",
+                        "Parent Relationship": "Outer",
+                        "Custom Plan Provider": "DeferredChunkAppend",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Relation Name": "telemetry_ts",
+                        "Alias": "telemetry_ts",
+                        "Startup Cost": 2,
+                        "Total Cost": 2.02,
+                        "Plan Rows": 1,
+                        "Plan Width": 8,
+                        "Disabled": false,
+                        "Order": [
+                          "\"time\" DESC"
+                        ],
+                        "Filter": "((\"time\" IS NOT NULL))"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "allocated_by_plan": 528395,
+              "base_allocation": 11611,
+              "base_allocation_increase": 24546
+            }
+          ]
+        }
+      ]
+    },
+    "latest_sample_telemetry_pg": {
+      "ok": true,
+      "durationMs": 1306,
+      "rows": [
+        {
+          "time": "2026-11-08T07:55:02.134Z"
+        }
+      ]
+    },
+    "earliest_sample_telemetry_pg": {
+      "ok": true,
+      "durationMs": 1309,
+      "rows": [
+        {
+          "time": "2025-10-10T15:51:36.128Z"
+        }
+      ]
+    },
+    "latest_sample_telemetry_ts": {
+      "ok": true,
+      "durationMs": 1315,
+      "rows": [
+        {
+          "time": "2026-11-08T07:55:02.134Z"
+        }
+      ]
+    },
+    "earliest_sample_telemetry_ts": {
+      "ok": true,
+      "durationMs": 1307,
+      "rows": [
+        {
+          "time": "2025-10-10T15:51:36.128Z"
+        }
+      ]
+    },
+    "continuous_aggregate_sample": {
+      "ok": true,
+      "durationMs": 1317,
+      "rows": [
+        {
+          "bucket": "2025-10-18T18:00:00.000Z",
+          "vehicle_id": 1545,
+          "point_count": "102"
+        }
+      ]
+    },
+    "materialization_statistics": {
+      "ok": true,
+      "durationMs": 1312,
+      "rows": [
+        {
+          "nspname": "_timescaledb_internal",
+          "relname": "_materialized_hypertable_2",
+          "estimated_rows": "-1",
+          "view_definition": " SELECT bucket,\n    vehicle_id,\n    avg_speed,\n    max_speed,\n    point_count\n   FROM _timescaledb_internal._materialized_hypertable_2;"
+        }
+      ]
+    },
+    "simulator_permissions": {
+      "ok": true,
+      "durationMs": 1310,
+      "rows": [
+        {
+          "schema_name": "public",
+          "relname": "simulator_bulk_jobs",
+          "can_select": true,
+          "can_insert": true,
+          "can_update": true,
+          "can_delete": true,
+          "has_owner_role": true
+        },
+        {
+          "schema_name": "public",
+          "relname": "telemetry_hourly",
+          "can_select": true,
+          "can_insert": true,
+          "can_update": true,
+          "can_delete": true,
+          "has_owner_role": true
+        },
+        {
+          "schema_name": "public",
+          "relname": "telemetry_pg",
+          "can_select": true,
+          "can_insert": true,
+          "can_update": true,
+          "can_delete": true,
+          "has_owner_role": true
+        },
+        {
+          "schema_name": "public",
+          "relname": "telemetry_ts",
+          "can_select": true,
+          "can_insert": true,
+          "can_update": true,
+          "can_delete": true,
+          "has_owner_role": true
+        },
+        {
+          "schema_name": "public",
+          "relname": "vehicles",
+          "can_select": true,
+          "can_insert": true,
+          "can_update": true,
+          "can_delete": true,
+          "has_owner_role": true
+        }
+      ],
+      "reusedDashboardCheck": true
+    },
+    "vehicle_plate_duplicates": {
+      "ok": true,
+      "durationMs": 1285,
+      "rows": [
+        {
+          "duplicate_plate_groups": 0,
+          "extra_duplicate_rows": 0
+        }
+      ]
+    },
+    "sequence_details": {
+      "ok": true,
+      "durationMs": 1281,
+      "rows": [
+        {
+          "seqstart": "1",
+          "seqincrement": "1",
+          "seqmax": "2147483647",
+          "seqmin": "1",
+          "seqcache": "1",
+          "seqcycle": false
+        }
+      ]
+    },
+    "continuous_aggregate_coverage": {
+      "ok": true,
+      "durationMs": 1285,
+      "rows": [
+        {
+          "earliest_bucket": "2025-10-10T15:00:00.000Z",
+          "latest_bucket": "2026-10-20T06:00:00.000Z"
+        }
+      ]
+    },
+    "sample_parity": {
+      "ok": true,
+      "durationMs": 1754,
+      "rows": [
+        {
+          "vehicles_checked": 3,
+          "pg_sample_rows": 15,
+          "ts_sample_rows": 15,
+          "pg_only_or_different": 0,
+          "ts_only_or_different": 0
+        }
+      ]
+    },
+    "bulk_checkpoint_summary": {
+      "ok": true,
+      "durationMs": 1289,
+      "rows": [
+        {
+          "planned_rows_per_table": "1654272",
+          "committed_rows_per_table": "1654272",
+          "status": "completed",
+          "start_time": "2025-10-11T08:32:12.976Z",
+          "end_time": "2026-10-11T08:32:12.976Z",
+          "vehicles": 1000
+        },
+        {
+          "planned_rows_per_table": "898532677",
+          "committed_rows_per_table": "898532677",
+          "status": "completed",
+          "start_time": "2025-10-10T15:51:36.128Z",
+          "end_time": "2026-10-10T15:51:36.128Z",
+          "vehicles": 1000
+        }
+      ]
+    },
+    "live_status_queries": {
+      "ok": true,
+      "durationMs": 3380,
+      "latestTimes": [
+        "2026-11-08T07:55:02.134Z",
+        "2026-11-08T07:55:02.134Z"
+      ]
+    }
+  },
+  "configuration": {
+    "dashboardEnvFiles": [
+      "dashboard/.env"
+    ],
+    "simulatorEnvFiles": [
+      "simulator/.env"
+    ],
+    "inheritedDatabaseUrl": false,
+    "sameDatabaseTarget": true,
+    "sameCredentials": true,
+    "dashboardSslVerify": false,
+    "simulatorSslVerify": false,
+    "dashboardBenchTimeoutMs": 0,
+    "dashboardExactCountTimeoutMs": 1800000
+  },
+  "connectionMs": 1603,
+  "finishedAt": "2026-11-08T08:01:15.341Z",
+  "baselineSettings": {
+    "statement_timeout": "0",
+    "timezone": "Etc/UTC"
+  },
+  "followUpAt": "2026-11-08T08:03:04.275Z"
+}

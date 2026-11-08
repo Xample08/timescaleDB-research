@@ -1,6 +1,7 @@
 import { withSqlStream } from "@/lib/sql-trace";
 import { NextResponse } from "next/server";
 import { withReadOnlyClient, withClient } from "@/lib/db";
+import { reconstructBeforeStorage, storageSize } from "@/lib/storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,68 +10,21 @@ export const maxDuration = 300;
 async function runGET() {
   try {
     return await withReadOnlyClient(async (client) => {
+      await client.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
       // PG sizes
       const pgSizes = await client.query(`
         SELECT 
-          pg_total_relation_size('telemetry_pg') AS total,
-          pg_relation_size('telemetry_pg') AS table,
-          pg_indexes_size('telemetry_pg') AS index
+          pg_total_relation_size('public.telemetry_pg') AS total,
+          pg_indexes_size('public.telemetry_pg') AS index
       `);
 
       // TS detailed size
       const tsSizes = await client.query(`
-        SELECT total_bytes, table_bytes, index_bytes, toast_bytes
-        FROM hypertable_detailed_size('telemetry_ts')
+        SELECT total_bytes, index_bytes, toast_bytes,
+          pg_total_relation_size('public.telemetry_ts') AS parent_total_bytes,
+          pg_indexes_size('public.telemetry_ts') AS parent_index_bytes
+        FROM hypertable_detailed_size('public.telemetry_ts')
       `);
-
-      // TS compression stats
-      let beforeCompressionBytes = null;
-      let afterCompressionBytes = null;
-      let beforeTableBytes = null;
-      let beforeIndexBytes = null;
-      let afterTableBytes = null;
-      let afterIndexBytes = null;
-      let compressionRatio = null;
-      try {
-        const tsComp = await client.query(`
-          SELECT *
-          FROM hypertable_compression_stats('telemetry_ts')
-        `);
-        if (tsComp.rows.length > 0) {
-          const r = tsComp.rows[0];
-          const before = parseInt(
-            r.before_compression_total_bytes || "0",
-            10,
-          );
-          const after = parseInt(
-            r.after_compression_total_bytes || "0",
-            10,
-          );
-          if (before > 0 && after > 0) {
-            beforeCompressionBytes = before;
-            afterCompressionBytes = after;
-            beforeTableBytes =
-              r.before_compression_table_bytes != null
-                ? parseInt(r.before_compression_table_bytes || "0", 10)
-                : null;
-            beforeIndexBytes =
-              r.before_compression_index_bytes != null
-                ? parseInt(r.before_compression_index_bytes || "0", 10)
-                : null;
-            afterTableBytes =
-              r.after_compression_table_bytes != null
-                ? parseInt(r.after_compression_table_bytes || "0", 10)
-                : null;
-            afterIndexBytes =
-              r.after_compression_index_bytes != null
-                ? parseInt(r.after_compression_index_bytes || "0", 10)
-                : null;
-            compressionRatio = before / after;
-          }
-        }
-      } catch {
-        // ignore if not available
-      }
 
       // Chunks (no LIMIT to show all chunks)
       const chunksQuery = await client.query(`
@@ -80,13 +34,24 @@ async function runGET() {
           c.range_start,
           c.range_end,
           c.is_compressed,
-          s.total_bytes
+          s.total_bytes,
+          s.index_bytes,
+          h.before_compression_total_bytes,
+          h.before_compression_index_bytes
         FROM timescaledb_information.chunks c
-        LEFT JOIN chunks_detailed_size('telemetry_ts') s 
+        LEFT JOIN chunks_detailed_size('public.telemetry_ts') s
           ON c.chunk_schema = s.chunk_schema AND c.chunk_name = s.chunk_name
-        WHERE c.hypertable_name = 'telemetry_ts'
+        LEFT JOIN chunk_compression_stats('public.telemetry_ts') h
+          ON c.chunk_schema = h.chunk_schema AND c.chunk_name = h.chunk_name
+        WHERE c.hypertable_schema = 'public' AND c.hypertable_name = 'telemetry_ts'
         ORDER BY c.range_start DESC
       `);
+
+      const pg = storageSize(pgSizes.rows[0]?.total, pgSizes.rows[0]?.index);
+      const ts = storageSize(tsSizes.rows[0]?.total_bytes, tsSizes.rows[0]?.index_bytes);
+      const parent = storageSize(tsSizes.rows[0]?.parent_total_bytes, tsSizes.rows[0]?.parent_index_bytes);
+      if (!pg || !ts || !parent) throw new Error("Storage size metadata is incomplete");
+      const before = reconstructBeforeStorage(ts, parent, chunksQuery.rows);
 
       const chunks = chunksQuery.rows.map((r) => ({
         schema: r.schema,
@@ -101,23 +66,18 @@ async function runGET() {
 
       return NextResponse.json({
         serverTime: new Date().toISOString(),
-        pg: {
-          totalBytes: parseInt(pgSizes.rows[0]?.total || "0", 10),
-          tableBytes: parseInt(pgSizes.rows[0]?.table || "0", 10),
-          indexBytes: parseInt(pgSizes.rows[0]?.index || "0", 10),
-        },
+        pg,
         ts: {
-          totalBytes: parseInt(tsSizes.rows[0]?.total_bytes || "0", 10),
-          tableBytes: parseInt(tsSizes.rows[0]?.table_bytes || "0", 10),
-          indexBytes: parseInt(tsSizes.rows[0]?.index_bytes || "0", 10),
+          ...ts,
           toastBytes: parseInt(tsSizes.rows[0]?.toast_bytes || "0", 10),
-          beforeCompressionBytes,
-          afterCompressionBytes,
-          beforeTableBytes,
-          beforeIndexBytes,
-          afterTableBytes,
-          afterIndexBytes,
-          compressionRatio,
+          beforeCompressionBytes: before?.totalBytes ?? null,
+          afterCompressionBytes: ts.totalBytes,
+          beforeTableBytes: before?.tableBytes ?? null,
+          beforeIndexBytes: before?.indexBytes ?? null,
+          afterTableBytes: ts.tableBytes,
+          afterIndexBytes: ts.indexBytes,
+          beforeSizeIsEstimate: chunksQuery.rows.some(row => row.is_compressed),
+          compressionRatio: before && ts.totalBytes > 0 ? before.totalBytes / ts.totalBytes : null,
         },
         chunks,
       });
